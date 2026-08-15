@@ -62,6 +62,20 @@ interface Bio {
   sosmedTikTok?: string;
 }
 
+interface ProfilMatch {
+  agama: string;
+  pendidikan: string;
+  kerja: string;
+  ibadah: string;
+  rokok: string;
+  alkohol: string;
+  pindah: string;
+  ldr: string;
+  timeline: string;
+  anak: string;
+  margaIbu: string;
+}
+
 interface Match {
   kode: string;
   nama: string;
@@ -74,6 +88,7 @@ interface Match {
   rinci: Rinci;
   adat: Adat;
   saling: boolean;
+  profil?: ProfilMatch;
   bio?: Bio;
 }
 
@@ -81,13 +96,32 @@ interface PesertaInfo {
   kode: string;
   inisial: string;
   marga: string;
+  margaIbu: string;
   gender: string;
   kota: string;
   usia: number;
+  agama: string;
+  pendidikan: string;
+  kerja: string;
+  ibadah: string;
+  rokok: string;
+  alkohol: string;
+  pindah: string;
+  ldr: string;
+  timeline: string;
+  tabungan: string;
+  anak: string;
+  ortu: string;
+  catatan: string;
   fotoUrl: string | null;
   premium: boolean;
   premiumExpiry: string | null;
   premiumPaket: string | null;
+  pekerjaan?: string;
+  jabatan?: string;
+  tinggiBadan?: number;
+  beratBadan?: string;
+  minat?: string[];
 }
 
 interface HasilData {
@@ -131,6 +165,90 @@ function Avatar({
       className={`${dim} flex items-center justify-center rounded-full bg-primary/15 font-bold text-primary border-2 border-primary/20`}
     >
       {inisial.charAt(0)}
+    </div>
+  );
+}
+
+function ProfilRow({ label, value }: { label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <div className="flex items-start gap-3 py-2 border-b border-border last:border-0">
+      <span className="w-32 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <span className="text-sm text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function ProfilLengkapSaya({ p }: { p: PesertaInfo }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-6 rounded-2xl border border-border bg-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-secondary/30 transition-colors"
+      >
+        <span className="font-semibold text-foreground">Profil Lengkap Saya</span>
+        <span className="text-muted-foreground text-lg">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="border-t border-border px-6 py-4">
+          <div className="grid sm:grid-cols-2 gap-x-8">
+            <div>
+              <ProfilRow label="Marga" value={p.marga} />
+              <ProfilRow label="Marga Ibu" value={p.margaIbu} />
+              <ProfilRow label="Agama" value={p.agama} />
+              <ProfilRow label="Domisili" value={p.kota} />
+              <ProfilRow label="Pendidikan" value={p.pendidikan} />
+              <ProfilRow label="Status Kerja" value={p.kerja} />
+              {p.pekerjaan && <ProfilRow label="Pekerjaan" value={p.jabatan ? `${p.jabatan} — ${p.pekerjaan}` : p.pekerjaan} />}
+              {p.tinggiBadan && <ProfilRow label="Tinggi/Berat" value={`${p.tinggiBadan} cm${p.beratBadan ? ` · ${p.beratBadan}` : ""}`} />}
+            </div>
+            <div>
+              <ProfilRow label="Ibadah" value={p.ibadah} />
+              <ProfilRow label="Rokok" value={p.rokok} />
+              <ProfilRow label="Alkohol" value={p.alkohol} />
+              <ProfilRow label="Siap Pindah" value={p.pindah} />
+              <ProfilRow label="LDR" value={p.ldr} />
+              <ProfilRow label="Target Nikah" value={p.timeline} />
+              <ProfilRow label="Tabungan" value={p.tabungan} />
+              <ProfilRow label="Rencana Anak" value={p.anak} />
+              <ProfilRow label="Tinggal Bersama" value={p.ortu} />
+            </div>
+          </div>
+          {p.minat && p.minat.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {p.minat.map((m) => (
+                <span key={m} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">{m}</span>
+              ))}
+            </div>
+          )}
+          {p.catatan && (
+            <p className="mt-3 text-sm text-muted-foreground italic">"{p.catatan}"</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfilMatchDetail({ profil, isPremium }: { profil?: ProfilMatch; isPremium: boolean }) {
+  if (!profil || !isPremium) return null;
+  return (
+    <div className="border-t border-border px-6 py-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Detail Profil</p>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-0.5">
+        <ProfilRow label="Agama" value={profil.agama} />
+        <ProfilRow label="Marga Ibu" value={profil.margaIbu} />
+        <ProfilRow label="Pendidikan" value={profil.pendidikan} />
+        <ProfilRow label="Status Kerja" value={profil.kerja} />
+        <ProfilRow label="Ibadah" value={profil.ibadah} />
+        <ProfilRow label="Rokok" value={profil.rokok} />
+        <ProfilRow label="Siap Pindah" value={profil.pindah} />
+        <ProfilRow label="LDR" value={profil.ldr} />
+        <ProfilRow label="Target Nikah" value={profil.timeline} />
+        <ProfilRow label="Rencana Anak" value={profil.anak} />
+      </div>
     </div>
   );
 }
@@ -410,6 +528,9 @@ export default function HasilPage() {
           </div>
         )}
 
+        {/* Profil Lengkap Saya */}
+        <ProfilLengkapSaya p={peserta} />
+
         {/* Heading */}
         <h2 className="mb-6 font-heading text-2xl font-bold text-foreground">
           Top 3 Kecocokan
@@ -471,6 +592,9 @@ export default function HasilPage() {
                         {m.adat.alasan}
                       </p>
                     </div>
+
+                    {/* Detail Profil (premium only) */}
+                    <ProfilMatchDetail profil={m.profil} isPremium={isPremium} />
 
                     {/* Bio */}
                     <BioSection bio={m.bio} />

@@ -70,12 +70,20 @@ export default function Home() {
               Platform kesiapan menikah untuk masyarakat Batak yang menghormati
               adat
             </p>
-            <Link
-              href="/daftar"
-              className="mt-10 inline-flex h-12 items-center rounded-xl bg-accent px-10 text-lg font-semibold text-white hover:bg-accent/90 transition-colors"
-            >
-              Daftar Sekarang
-            </Link>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <Link
+                href="/daftar"
+                className="inline-flex h-12 items-center rounded-xl bg-accent px-10 text-lg font-semibold text-white hover:bg-accent/90 transition-colors"
+              >
+                Daftar Sekarang
+              </Link>
+              <Link
+                href="/masuk"
+                className="inline-flex h-12 items-center rounded-xl border border-primary/30 bg-card px-8 text-base font-semibold text-primary hover:bg-primary/5 transition-colors"
+              >
+                Sudah Daftar? Lihat Hasil →
+              </Link>
+            </div>
 
             {/* Stats */}
             <div className="mt-14 flex gap-16">
