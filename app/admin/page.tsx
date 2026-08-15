@@ -150,10 +150,17 @@ export default function AdminPage() {
     }
   }
 
+  const fetchMatching = useCallback(async () => {
+    const res = await fetch("/api/matching");
+    const data = await res.json();
+    setMatching(data);
+  }, []);
+
   useEffect(() => {
     fetchPeserta();
     fetchLaporan();
-  }, [fetchPeserta, fetchLaporan]);
+    fetchMatching();
+  }, [fetchPeserta, fetchLaporan, fetchMatching]);
 
   async function selesaikanLaporan(id: string) {
     await fetch("/api/admin/laporan", {
@@ -170,7 +177,6 @@ export default function AdminPage() {
       const res = await fetch("/api/matching");
       const data = await res.json();
       setMatching(data);
-      setTab("matching");
     } finally {
       setLoading(false);
     }
@@ -275,10 +281,10 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={runMatching}
-            disabled={loading || peserta.length < 2}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-white hover:bg-accent/90 transition-colors disabled:opacity-50"
+            disabled={loading}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-secondary border border-border px-5 text-sm font-medium text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
           >
-            {loading ? "Memproses..." : "Jalankan Matching"}
+            {loading ? "Memuat..." : "↻ Refresh Data"}
           </button>
         </div>
 
