@@ -112,6 +112,7 @@ export default function AdminPage() {
   const [peserta, setPeserta] = useState<PesertaData[]>([]);
   const [matching, setMatching] = useState<MatchingResult | null>(null);
   const [laporan, setLaporan] = useState<{ id: string; peserta_a: string; peserta_b: string; alasan_laporan: string; created_at: string }[]>([]);
+  const [stats, setStats] = useState<{ totalPremium: number; totalPemasukan: number; abandoned: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"peserta" | "matching" | "laporan">("peserta");
   const [togglingKode, setTogglingKode] = useState<string | null>(null);
@@ -156,11 +157,18 @@ export default function AdminPage() {
     setMatching(data);
   }, []);
 
+  const fetchStats = useCallback(async () => {
+    const res = await fetch("/api/admin/stats");
+    const data = await res.json();
+    setStats(data);
+  }, []);
+
   useEffect(() => {
     fetchPeserta();
     fetchLaporan();
     fetchMatching();
-  }, [fetchPeserta, fetchLaporan, fetchMatching]);
+    fetchStats();
+  }, [fetchPeserta, fetchLaporan, fetchMatching, fetchStats]);
 
   async function selesaikanLaporan(id: string) {
     await fetch("/api/admin/laporan", {
@@ -216,12 +224,10 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">Total Peserta</p>
-            <p className="mt-1 text-3xl font-bold text-foreground">
-              {peserta.length}
-            </p>
+            <p className="mt-1 text-3xl font-bold text-foreground">{peserta.length}</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-5">
             <p className="text-sm text-muted-foreground">Total Pasangan</p>
@@ -234,6 +240,31 @@ export default function AdminPage() {
             <p className="mt-1 text-3xl font-bold text-adat-blokir">
               {matching?.diblokir ?? "—"}
             </p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <p className="text-sm text-muted-foreground">Total Premium</p>
+            <p className="mt-1 text-3xl font-bold text-accent">
+              {stats ? stats.totalPremium : "—"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <p className="text-sm text-muted-foreground">Total Pemasukan</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
+              {stats
+                ? `Rp ${stats.totalPemasukan.toLocaleString("id-ID")}`
+                : "—"}
+            </p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <p className="text-sm text-muted-foreground">Daftar Tidak Selesai</p>
+            <p className="mt-1 text-3xl font-bold text-orange-500">
+              {stats ? stats.abandoned : "—"}
+            </p>
+            {stats && stats.abandoned > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                dari {stats.abandoned + peserta.length} yang mulai daftar
+              </p>
+            )}
           </div>
         </div>
 

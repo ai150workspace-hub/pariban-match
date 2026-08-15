@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { StepIndicator } from "@/components/daftar/step-indicator";
 import { FormField } from "@/components/daftar/form-field";
@@ -102,6 +102,13 @@ export default function DaftarPage() {
   const [fotoUploaded, setFotoUploaded] = useState(false);
   const [fotoLoading, setFotoLoading] = useState(false);
   const [fotoError, setFotoError] = useState("");
+
+  useEffect(() => {
+    // Log sekali per sesi — hindari double count dari refresh
+    if (sessionStorage.getItem("daftar_logged")) return;
+    sessionStorage.setItem("daftar_logged", "1");
+    fetch("/api/daftar/log", { method: "POST" }).catch(() => {});
+  }, []);
 
   function set(name: string, value: string) {
     setData((prev) => ({ ...prev, [name]: value }));
