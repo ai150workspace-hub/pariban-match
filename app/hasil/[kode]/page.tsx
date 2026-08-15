@@ -473,7 +473,18 @@ export default function HasilPage() {
           <Link href="/" className="text-xl font-bold tracking-[0.15em] text-primary">
             PARIBAN
           </Link>
-          <span className="text-sm text-muted-foreground">Hasil Pencocokan</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">Hasil Pencocokan</span>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("pariban_kode");
+                router.push("/masuk");
+              }}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-primary"
+            >
+              Keluar
+            </button>
+          </div>
         </div>
       </nav>
 
