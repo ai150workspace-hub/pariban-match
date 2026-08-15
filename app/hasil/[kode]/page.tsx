@@ -622,21 +622,33 @@ export default function HasilPage() {
                       </div>
                     </div>
 
-                    {/* Mulai Chat — hanya jika SALING COCOK + Premium */}
-                    {m.saling && isPremium && (
-                      <div className="border-t border-accent/20 bg-accent/5 px-6 py-4 flex items-center justify-between">
+                    {/* Mulai Chat — SALING COCOK */}
+                    {m.saling && (
+                      <div className="border-t border-accent/20 bg-accent/5 px-6 py-4 flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-sm font-semibold text-foreground">Kamu dan {m.nama} saling cocok!</p>
-                          <p className="text-xs text-muted-foreground">Mulai percakapan sekarang</p>
+                          <p className="text-sm font-semibold text-foreground">♥ Kamu dan {m.nama} saling cocok!</p>
+                          <p className="text-xs text-muted-foreground">
+                            {isPremium ? "Mulai percakapan sekarang" : "Upgrade Premium untuk mulai chat"}
+                          </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => bukaChat(m.kode)}
-                          disabled={chatLoading === m.kode}
-                          className="inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors disabled:opacity-60"
-                        >
-                          {chatLoading === m.kode ? "Membuka..." : "♥ Mulai Chat"}
-                        </button>
+                        {isPremium ? (
+                          <button
+                            type="button"
+                            onClick={() => bukaChat(m.kode)}
+                            disabled={chatLoading === m.kode}
+                            className="shrink-0 inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors disabled:opacity-60"
+                          >
+                            {chatLoading === m.kode ? "Membuka..." : "Mulai Chat"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setShowPaketModal(true)}
+                            className="shrink-0 inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
+                          >
+                            🔓 Upgrade Premium
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
