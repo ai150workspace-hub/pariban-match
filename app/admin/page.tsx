@@ -43,13 +43,84 @@ interface MatchingResult {
   hasil: HasilPeserta[];
 }
 
+function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Password salah");
+        return;
+      }
+      sessionStorage.setItem("admin_auth", "1");
+      onSuccess();
+    } catch {
+      setError("Gagal menghubungi server");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 text-center">
+          <p className="text-xl font-bold tracking-[0.15em] text-primary mb-1">PARIBAN</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Admin</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Masukkan password untuk melanjutkan</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password admin"
+            required
+            autoFocus
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={loading || !password}
+            className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-white hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {loading ? "Memeriksa..." : "Masuk"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
+  const [authed, setAuthed] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [peserta, setPeserta] = useState<PesertaData[]>([]);
   const [matching, setMatching] = useState<MatchingResult | null>(null);
   const [laporan, setLaporan] = useState<{ id: string; peserta_a: string; peserta_b: string; alasan_laporan: string; created_at: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"peserta" | "matching" | "laporan">("peserta");
   const [togglingKode, setTogglingKode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ok = sessionStorage.getItem("admin_auth") === "1";
+    setAuthed(ok);
+    setCheckingAuth(false);
+  }, []);
 
   const fetchPeserta = useCallback(async () => {
     const res = await fetch("/api/peserta");
@@ -106,6 +177,9 @@ export default function AdminPage() {
   }
 
   const tahunSekarang = new Date().getFullYear();
+
+  if (checkingAuth) return null;
+  if (!authed) return <AdminLogin onSuccess={() => setAuthed(true)} />;
 
   return (
     <div className="min-h-screen bg-background">
