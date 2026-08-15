@@ -206,9 +206,20 @@ export default function AdminPage() {
           >
             PARIBAN
           </Link>
-          <span className="rounded-md bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            ADMIN
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="rounded-md bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              ADMIN
+            </span>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("admin_authed");
+                setAuthed(false);
+              }}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-primary"
+            >
+              Keluar
+            </button>
+          </div>
         </div>
       </nav>
 
