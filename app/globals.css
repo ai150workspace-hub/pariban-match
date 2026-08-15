@@ -1,0 +1,208 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Semantic adat colors */
+  --color-adat-aman: var(--adat-aman);
+  --color-adat-aman-fg: var(--adat-aman-fg);
+  --color-adat-blokir: var(--adat-blokir);
+  --color-adat-blokir-fg: var(--adat-blokir-fg);
+  --color-adat-cek: var(--adat-cek);
+  --color-adat-cek-fg: var(--adat-cek-fg);
+  --color-adat-pariban: var(--adat-pariban);
+  --color-adat-pariban-fg: var(--adat-pariban-fg);
+}
+
+/*
+ * PARIBAN Design System — Batak-inspired palette
+ *
+ * Maroon Ulos  #7A1F2A — from the deep red of traditional ulos cloth
+ * Emas Gorga   #B8860B — from the gold of gorga carvings
+ * Krem Hangat  #FAF6F1 — warm cream ground, not cold white
+ * Ink          #2E2B28 — warm near-black with brown undertone
+ */
+
+:root {
+  /* Ground */
+  --background: #FAF6F1;
+  --foreground: #2E2B28;
+
+  /* Cards & surfaces */
+  --card: #FFFFFF;
+  --card-foreground: #2E2B28;
+  --popover: #FFFFFF;
+  --popover-foreground: #2E2B28;
+
+  /* Primary — Maroon Ulos */
+  --primary: #7A1F2A;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary — warm cream tint */
+  --secondary: #F3EDE4;
+  --secondary-foreground: #2E2B28;
+
+  /* Muted */
+  --muted: #F3EDE4;
+  --muted-foreground: #6B665F;
+
+  /* Accent — Emas Gorga */
+  --accent: #B8860B;
+  --accent-foreground: #FFFFFF;
+
+  /* Destructive */
+  --destructive: #DC2626;
+
+  /* Borders & inputs */
+  --border: #EDE9E3;
+  --input: #EDE9E3;
+  --ring: #7A1F2A;
+
+  /* Charts — warm tonal scale */
+  --chart-1: #7A1F2A;
+  --chart-2: #B8860B;
+  --chart-3: #2D6A4F;
+  --chart-4: #B07D2A;
+  --chart-5: #5C1720;
+
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: #F3EDE4;
+  --sidebar-foreground: #2E2B28;
+  --sidebar-primary: #7A1F2A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #FAF6F1;
+  --sidebar-accent-foreground: #2E2B28;
+  --sidebar-border: #EDE9E3;
+  --sidebar-ring: #7A1F2A;
+
+  /* Adat status colors */
+  --adat-aman: #E4EFE9;
+  --adat-aman-fg: #2D6A4F;
+  --adat-blokir: #FAEAE9;
+  --adat-blokir-fg: #DC2626;
+  --adat-cek: #FAF0DC;
+  --adat-cek-fg: #B07D2A;
+  --adat-pariban: #F7EFDC;
+  --adat-pariban-fg: #9A7B31;
+}
+
+.dark {
+  /* Ground */
+  --background: #1A1613;
+  --foreground: #F3EDE4;
+
+  /* Cards & surfaces */
+  --card: #251F1B;
+  --card-foreground: #F3EDE4;
+  --popover: #251F1B;
+  --popover-foreground: #F3EDE4;
+
+  /* Primary — lighter maroon for dark mode */
+  --primary: #D4736A;
+  --primary-foreground: #1A1613;
+
+  /* Secondary */
+  --secondary: #2E2620;
+  --secondary-foreground: #F3EDE4;
+
+  /* Muted */
+  --muted: #2E2620;
+  --muted-foreground: #9A948B;
+
+  /* Accent — lighter gold for dark mode */
+  --accent: #D4A843;
+  --accent-foreground: #1A1613;
+
+  /* Destructive */
+  --destructive: #F87171;
+
+  /* Borders & inputs */
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: #D4736A;
+
+  /* Charts */
+  --chart-1: #D4736A;
+  --chart-2: #D4A843;
+  --chart-3: #6FCF97;
+  --chart-4: #E0B05A;
+  --chart-5: #F87171;
+
+  /* Sidebar */
+  --sidebar: #211B17;
+  --sidebar-foreground: #F3EDE4;
+  --sidebar-primary: #D4736A;
+  --sidebar-primary-foreground: #1A1613;
+  --sidebar-accent: #2E2620;
+  --sidebar-accent-foreground: #F3EDE4;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: #D4736A;
+
+  /* Adat status colors — dark mode */
+  --adat-aman: #1B2E24;
+  --adat-aman-fg: #6FCF97;
+  --adat-blokir: #2E1B19;
+  --adat-blokir-fg: #F87171;
+  --adat-cek: #2E2517;
+  --adat-cek-fg: #E0B05A;
+  --adat-pariban: #2E2517;
+  --adat-pariban-fg: #D4A843;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

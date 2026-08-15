@@ -1,0 +1,556 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Script from "next/script";
+import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
+
+const IS_PRODUCTION = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
+const CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "";
+const SNAP_JS = IS_PRODUCTION
+  ? "https://app.midtrans.com/snap/snap.js"
+  : "https://app.sandbox.midtrans.com/snap/snap.js";
+
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        options: {
+          onSuccess?: (result: unknown) => void;
+          onPending?: (result: unknown) => void;
+          onError?: (result: unknown) => void;
+          onClose?: () => void;
+        },
+      ) => void;
+    };
+  }
+}
+
+const PREMIUM_THRESHOLD = 90;
+
+const PAKET = [
+  { id: "trial" as const, nama: "Trial 1 Bulan", deskripsi: "Coba akses penuh selama 30 hari", harga: 79000, hemat: null },
+  { id: "3bln" as const, nama: "3 Bulan", deskripsi: "90 hari akses penuh tanpa batas", harga: 199000, hemat: "Hemat 16%" },
+  { id: "6bln" as const, nama: "6 Bulan", deskripsi: "180 hari akses penuh tanpa batas", harga: 329000, hemat: "Hemat 31%" },
+] as const;
+
+type PaketId = "trial" | "3bln" | "6bln";
+
+interface Rinci {
+  bibit: number;
+  bebet: number;
+  bobot: number;
+  kepribadian: number;
+}
+
+interface Adat {
+  status: "AMAN" | "PARIBAN" | "PERLU_DICEK" | "DIBLOKIR";
+  label: string;
+  alasan: string;
+}
+
+interface Bio {
+  pekerjaan?: string;
+  jabatan?: string;
+  tinggiBadan?: number;
+  beratBadan?: string;
+  minat?: string[];
+  sosmedLinkedIn?: string;
+  sosmedInstagram?: string;
+  sosmedTikTok?: string;
+}
+
+interface Match {
+  kode: string;
+  nama: string;
+  marga: string;
+  gender: string;
+  kota: string;
+  usia: number;
+  skor: number;
+  fotoUrl: string | null;
+  rinci: Rinci;
+  adat: Adat;
+  saling: boolean;
+  bio?: Bio;
+}
+
+interface PesertaInfo {
+  kode: string;
+  inisial: string;
+  marga: string;
+  gender: string;
+  kota: string;
+  usia: number;
+  fotoUrl: string | null;
+  premium: boolean;
+  premiumExpiry: string | null;
+  premiumPaket: string | null;
+}
+
+interface HasilData {
+  peserta: PesertaInfo;
+  top3: Match[];
+}
+
+const PILAR = [
+  { key: "bibit" as const, label: "Bibit", max: 30, color: "bg-primary", text: "text-primary" },
+  { key: "bebet" as const, label: "Bebet", max: 20, color: "bg-accent", text: "text-accent" },
+  { key: "bobot" as const, label: "Bobot", max: 30, color: "bg-adat-aman", text: "text-adat-aman" },
+  { key: "kepribadian" as const, label: "Kepribadian", max: 20, color: "bg-[#604AA6]", text: "text-[#604AA6]" },
+];
+
+function Avatar({
+  fotoUrl,
+  inisial,
+  size = "md",
+}: {
+  fotoUrl: string | null;
+  inisial: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const [imgError, setImgError] = useState(false);
+  const dim =
+    size === "lg" ? "h-20 w-20 text-2xl" : size === "sm" ? "h-10 w-10 text-sm" : "h-14 w-14 text-lg";
+
+  if (fotoUrl && !imgError) {
+    return (
+      <img
+        src={fotoUrl}
+        alt={inisial}
+        onError={() => setImgError(true)}
+        className={`${dim} rounded-full object-cover border-2 border-border`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${dim} flex items-center justify-center rounded-full bg-primary/15 font-bold text-primary border-2 border-primary/20`}
+    >
+      {inisial.charAt(0)}
+    </div>
+  );
+}
+
+function BioSection({ bio }: { bio?: Bio }) {
+  if (!bio) return null;
+  const hasAny =
+    bio.pekerjaan || bio.jabatan || bio.tinggiBadan || bio.beratBadan ||
+    (bio.minat && bio.minat.length > 0) ||
+    bio.sosmedLinkedIn || bio.sosmedInstagram || bio.sosmedTikTok;
+  if (!hasAny) return null;
+
+  return (
+    <div className="border-t border-border px-6 py-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bio Profil</p>
+      <div className="flex flex-wrap gap-2">
+        {bio.pekerjaan && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">
+            💼 {bio.jabatan ? `${bio.jabatan} — ${bio.pekerjaan}` : bio.pekerjaan}
+          </span>
+        )}
+        {bio.tinggiBadan && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">
+            📏 {bio.tinggiBadan} cm {bio.beratBadan ? `· ${bio.beratBadan}` : ""}
+          </span>
+        )}
+        {bio.minat?.map((m) => (
+          <span key={m} className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+            {m}
+          </span>
+        ))}
+        {bio.sosmedLinkedIn && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">in {bio.sosmedLinkedIn}</span>
+        )}
+        {bio.sosmedInstagram && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">@{bio.sosmedInstagram}</span>
+        )}
+        {bio.sosmedTikTok && (
+          <span className="rounded-full bg-secondary px-3 py-1 text-xs text-foreground">TikTok: {bio.sosmedTikTok}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function HasilPage() {
+  const { kode } = useParams<{ kode: string }>();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [data, setData] = useState<HasilData | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [snapReady, setSnapReady] = useState(false);
+  const [showPaketModal, setShowPaketModal] = useState(false);
+  const [chatLoading, setChatLoading] = useState<string | null>(null);
+  const [chatError, setChatError] = useState("");
+
+  const loadData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/matching/${kode}`);
+      if (!res.ok) {
+        const err = await res.json();
+        setError(err.error || "Data tidak ditemukan");
+        return;
+      }
+      setData(await res.json());
+    } catch {
+      setError("Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  }, [kode]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (searchParams.get("payment") === "success") {
+      loadData();
+    }
+  }, [searchParams, loadData]);
+
+  async function handleUpgrade(paket: PaketId) {
+    if (!snapReady || !window.snap) {
+      setPayError("Sistem pembayaran belum siap, coba lagi sebentar.");
+      return;
+    }
+    setPayLoading(true);
+    setPayError("");
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kode, paket }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setPayError(result.error || "Gagal membuat transaksi");
+        return;
+      }
+      window.snap.pay(result.snapToken, {
+        onSuccess: () => { setShowPaketModal(false); loadData(); },
+        onPending: () => setPayError("Pembayaran menunggu konfirmasi."),
+        onError: () => setPayError("Pembayaran gagal. Silakan coba lagi."),
+        onClose: () => setPayLoading(false),
+      });
+    } catch {
+      setPayError("Gagal menghubungi server pembayaran.");
+    } finally {
+      setPayLoading(false);
+    }
+  }
+
+  async function bukaChat(lawanKode: string) {
+    setChatLoading(lawanKode);
+    setChatError("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kode, lawanKode }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setChatError(result.error || "Gagal membuka chat");
+        return;
+      }
+      router.push(`/chat/${result.id}?kode=${kode}`);
+    } catch {
+      setChatError("Gagal menghubungi server chat.");
+    } finally {
+      setChatLoading(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Memuat hasil...</p>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+        <p className="text-lg font-semibold text-foreground">
+          {error || "Data tidak ditemukan"}
+        </p>
+        <Link href="/" className="mt-4 text-sm text-primary hover:underline">
+          Kembali ke Beranda
+        </Link>
+      </div>
+    );
+  }
+
+  const { peserta, top3 } = data;
+  const isPremium =
+    peserta.premium &&
+    (!peserta.premiumExpiry || new Date(peserta.premiumExpiry) > new Date());
+
+  const expiryLabel = peserta.premiumExpiry
+    ? new Date(peserta.premiumExpiry).toLocaleDateString("id-ID", {
+        day: "numeric", month: "long", year: "numeric",
+      })
+    : null;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Script
+        src={SNAP_JS}
+        data-client-key={CLIENT_KEY}
+        strategy="lazyOnload"
+        onLoad={() => setSnapReady(true)}
+      />
+
+      {/* Paket Modal */}
+      {showPaketModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <h3 className="font-heading text-xl font-bold text-foreground">Pilih Paket Premium</h3>
+            <p className="mt-1 text-sm text-muted-foreground mb-5">Akses penuh semua hasil matching tanpa batas</p>
+
+            <div className="space-y-3">
+              {PAKET.map((pk) => (
+                <button
+                  key={pk.id}
+                  onClick={() => handleUpgrade(pk.id)}
+                  disabled={payLoading}
+                  className="w-full flex items-center justify-between rounded-xl border border-border bg-secondary/50 px-5 py-4 hover:border-accent/40 hover:bg-accent/5 transition-colors text-left disabled:opacity-60"
+                >
+                  <div>
+                    <p className="font-semibold text-foreground">{pk.nama}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{pk.deskripsi}</p>
+                  </div>
+                  <div className="text-right ml-4 shrink-0">
+                    <p className="font-bold text-primary">Rp {pk.harga.toLocaleString("id-ID")}</p>
+                    {pk.hemat && <p className="text-xs text-green-600 font-medium">{pk.hemat}</p>}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {payError && <p className="mt-3 text-sm text-red-600">{payError}</p>}
+
+            <button
+              onClick={() => { setShowPaketModal(false); setPayError(""); }}
+              className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
+          <Link href="/" className="text-xl font-bold tracking-[0.15em] text-primary">
+            PARIBAN
+          </Link>
+          <span className="text-sm text-muted-foreground">Hasil Pencocokan</span>
+        </div>
+      </nav>
+
+      <div className="mx-auto max-w-4xl px-6 py-10">
+        {/* Peserta Header */}
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
+          <div className="flex items-center gap-5">
+            <Avatar fotoUrl={peserta.fotoUrl} inisial={peserta.inisial} size="lg" />
+            <div className="flex-1">
+              <p className="text-xs font-mono text-muted-foreground">{peserta.kode}</p>
+              <h1 className="mt-1 font-heading text-3xl font-bold text-foreground">
+                {peserta.inisial}
+              </h1>
+              <p className="mt-1 text-muted-foreground">
+                {peserta.gender === "Perempuan" ? "♀" : "♂"} {peserta.gender} ·{" "}
+                {peserta.usia} tahun · {peserta.marga} · {peserta.kota}
+              </p>
+            </div>
+            {isPremium && (
+              <div className="text-right">
+                <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent border border-accent/30">
+                  ★ PREMIUM
+                </span>
+                {expiryLabel && (
+                  <p className="mt-1 text-xs text-muted-foreground">s/d {expiryLabel}</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Banner upgrade */}
+        {!isPremium && top3.some((m) => m.skor > PREMIUM_THRESHOLD) && (
+          <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
+            <div className="flex items-start gap-4">
+              <span className="text-2xl">🔒</span>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">Ada kecocokan tinggi yang tersembunyi</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Beberapa kandidat memiliki skor di atas 90. Pilih paket berlangganan untuk melihat hasil lengkap.
+                </p>
+                {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
+                <button
+                  type="button"
+                  onClick={() => setShowPaketModal(true)}
+                  className="mt-3 inline-flex h-9 items-center rounded-lg bg-accent px-5 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
+                >
+                  Lihat Paket Premium
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Heading */}
+        <h2 className="mb-6 font-heading text-2xl font-bold text-foreground">
+          Top 3 Kecocokan
+        </h2>
+
+        {chatError && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
+            {chatError}
+          </div>
+        )}
+
+        {top3.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-12 text-center">
+            <p className="text-lg font-semibold text-foreground">Belum ada kandidat yang cocok</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sistem pencocokan berjalan otomatis — hasil muncul segera setelah ada peserta lain yang memenuhi kriteria agama, usia, dan adat.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {top3.map((m, i) => {
+              const isBlurred = !isPremium && m.skor > PREMIUM_THRESHOLD;
+              return (
+                <div
+                  key={i}
+                  className={`relative overflow-hidden rounded-2xl border bg-card ${
+                    m.saling ? "border-accent/40" : "border-border"
+                  }`}
+                >
+                  <div className={isBlurred ? "blur-sm select-none pointer-events-none" : ""}>
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between p-6 pb-0">
+                      <div className="flex items-start gap-4">
+                        <Avatar fotoUrl={m.fotoUrl} inisial={m.nama} size="md" />
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground">Peringkat {i + 1}</span>
+                            {m.saling && (
+                              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+                                SALING COCOK ♥
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="mt-1 text-xl font-semibold text-foreground">{m.nama}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {m.gender === "Perempuan" ? "♀" : "♂"} {m.usia} tahun · {m.marga} · {m.kota}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+                        <span className="text-2xl font-bold text-primary">{m.skor}</span>
+                      </div>
+                    </div>
+
+                    {/* Adat Status */}
+                    <div className="px-6 py-4">
+                      <StatusAdatBadge status={m.adat.status} label={m.adat.label} />
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {m.adat.alasan}
+                      </p>
+                    </div>
+
+                    {/* Bio */}
+                    <BioSection bio={m.bio} />
+
+                    {/* Skor Breakdown */}
+                    <div className="border-t border-border px-6 py-5">
+                      <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Breakdown Skor
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        {PILAR.map((p) => (
+                          <div key={p.key} className="text-center">
+                            <p className={`text-2xl font-bold ${p.text}`}>{m.rinci[p.key]}</p>
+                            <div className="mx-auto mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={`h-full rounded-full ${p.color}`}
+                                style={{ width: `${(m.rinci[p.key] / p.max) * 100}%` }}
+                              />
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {p.label} ({p.max})
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Mulai Chat — hanya jika SALING COCOK + Premium */}
+                    {m.saling && isPremium && (
+                      <div className="border-t border-accent/20 bg-accent/5 px-6 py-4 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">Kamu dan {m.nama} saling cocok!</p>
+                          <p className="text-xs text-muted-foreground">Mulai percakapan sekarang</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => bukaChat(m.kode)}
+                          disabled={chatLoading === m.kode}
+                          className="inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors disabled:opacity-60"
+                        >
+                          {chatLoading === m.kode ? "Membuka..." : "♥ Mulai Chat"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Lock overlay */}
+                  {isBlurred && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/70 backdrop-blur-[2px]">
+                      <div className="rounded-2xl bg-card border border-accent/30 p-6 text-center shadow-lg max-w-xs mx-4">
+                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-2xl">
+                          🔒
+                        </div>
+                        <p className="font-semibold text-foreground">Skor di atas 90</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          Kandidat ini sangat cocok untukmu. Pilih paket Premium untuk melihat detailnya.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowPaketModal(true)}
+                          className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
+                        >
+                          Lihat Paket
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-8 rounded-xl bg-secondary/50 p-5 text-center">
+          <p className="text-sm text-muted-foreground">
+            Status &quot;Perlu Dicek&quot; bukan larangan — artinya perlu dipastikan ke
+            keluarga. Hubungi kami jika ada pertanyaan.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
