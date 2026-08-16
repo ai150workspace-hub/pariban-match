@@ -118,6 +118,7 @@ function partialToDb(updates: Partial<Peserta>): Record<string, unknown> {
     sosmedLinkedIn: "sosmed_linkedin", sosmedInstagram: "sosmed_instagram",
     sosmedTikTok: "sosmed_tiktok",
     fotoCount: "foto_count", fotoLiveVerified: "foto_live_verified",
+    banned: "banned",
   };
   const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(updates)) {

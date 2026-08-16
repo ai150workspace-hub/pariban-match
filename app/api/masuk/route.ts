@@ -26,5 +26,12 @@ export async function POST(req: Request) {
     );
   }
 
+  if (peserta.banned) {
+    return NextResponse.json(
+      { error: "Akun ini telah diblokir. Hubungi admin untuk informasi lebih lanjut." },
+      { status: 403 },
+    );
+  }
+
   return NextResponse.json({ kode: peserta.kode, inisial: peserta.inisial });
 }

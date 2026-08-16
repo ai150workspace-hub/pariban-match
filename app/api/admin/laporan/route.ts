@@ -10,7 +10,7 @@ export async function GET() {
   const { getSupabase } = await import("@/lib/supabase");
   const { data, error } = await getSupabase()
     .from("percakapan")
-    .select("id, peserta_a, peserta_b, alasan_laporan, created_at")
+    .select("id, peserta_a, peserta_b, pelapor_kode, alasan_laporan, created_at")
     .eq("dilaporkan", true)
     .order("created_at", { ascending: false });
 
@@ -36,7 +36,7 @@ export async function PATCH(req: Request) {
   const { getSupabase } = await import("@/lib/supabase");
   const { error } = await getSupabase()
     .from("percakapan")
-    .update({ dilaporkan: false, alasan_laporan: null })
+    .update({ dilaporkan: false, alasan_laporan: null, pelapor_kode: null })
     .eq("id", body.id);
 
   if (error) {

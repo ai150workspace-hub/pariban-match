@@ -41,9 +41,10 @@ export async function POST(
     return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
   }
 
+  const dilaporkan_kode = conv.peserta_a === kode ? conv.peserta_b : conv.peserta_a;
   const { error: updateErr } = await sb
     .from("percakapan")
-    .update({ dilaporkan: true, alasan_laporan: alasan.trim() })
+    .update({ dilaporkan: true, alasan_laporan: alasan.trim(), pelapor_kode: kode, peserta_b: dilaporkan_kode })
     .eq("id", id);
 
   if (updateErr) {

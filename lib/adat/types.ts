@@ -43,6 +43,7 @@ export interface Peserta {
   inisial: string;
   statusData: string;
 
+  banned?: boolean;       // akun diblokir admin
   foto?: string;          // file extension: "jpg" | "png" | "webp"
   fotoCount?: number;     // jumlah foto yang diunggah
   fotoLiveVerified?: boolean; // apakah foto profil diambil langsung dari kamera

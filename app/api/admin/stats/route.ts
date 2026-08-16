@@ -8,6 +8,8 @@ const HARGA: Record<string, number> = {
   "6bln": 329000,
 };
 
+const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
+
 export async function GET() {
   const [peserta, daftarMulai] = await Promise.all([
     loadPeserta(),
@@ -15,6 +17,7 @@ export async function GET() {
   ]);
 
   const totalPremium = peserta.filter((p) => p.premium).length;
+  const totalBanned = peserta.filter((p) => p.banned).length;
 
   const totalPemasukan = peserta
     .filter((p) => p.premium && p.premiumPaket)
@@ -23,9 +26,24 @@ export async function GET() {
   const daftarSelesai = peserta.length;
   const abandoned = Math.max(0, daftarMulai - daftarSelesai);
 
+  // Count active laporan from Supabase
+  let totalLaporan = 0;
+  if (USE_SUPABASE) {
+    try {
+      const { getSupabase } = await import("@/lib/supabase");
+      const { count } = await getSupabase()
+        .from("percakapan")
+        .select("*", { count: "exact", head: true })
+        .eq("dilaporkan", true);
+      totalLaporan = count ?? 0;
+    } catch {}
+  }
+
   return NextResponse.json({
     totalPremium,
     totalPemasukan,
+    totalBanned,
+    totalLaporan,
     daftarMulai,
     daftarSelesai,
     abandoned,
