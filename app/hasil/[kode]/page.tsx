@@ -181,16 +181,17 @@ function ProfilRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
+function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
   kode: string;
   fotoUrl: string | null;
-  fotoCount: number;
   fotoLiveVerified: boolean;
 }) {
   const MAX = 5;
-  const [count, setCount] = useState(initCount);
+  const ALL_EXTRA = [2, 3, 4, 5]; // always probe these indices
+  const [loadedExtras, setLoadedExtras] = useState<Set<number>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null); // null=profile, 2-5=extra
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // lightbox
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null); // 0=profile, 2-5=extra
   const [showAdd, setShowAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [addError, setAddError] = useState("");
@@ -198,7 +199,14 @@ function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const extraIndices = Array.from({ length: Math.max(0, count - 1) }, (_, i) => i + 2);
+  const totalLoaded = 1 + loadedExtras.size; // profile + extras that responded 200
+
+  function markLoaded(idx: number) {
+    setLoadedExtras((prev) => new Set([...prev, idx]));
+  }
+  function markFailed(idx: number) {
+    setLoadedExtras((prev) => { const s = new Set(prev); s.delete(idx); return s; });
+  }
 
   async function startCamera() {
     try {
@@ -217,19 +225,19 @@ function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
     setShowCamera(false);
   }
 
-  async function uploadPhoto(blob: Blob, isLive: boolean, isProfile = false) {
-    const nextIdx = count + 1;
+  async function uploadPhoto(blob: Blob, isLive: boolean) {
+    const nextIdx = totalLoaded + 1; // next available slot
     const fd = new FormData();
     fd.append("foto", blob, `foto_${nextIdx}.jpg`);
     fd.append("index", String(nextIdx));
-    fd.append("isProfile", isProfile ? "true" : "false");
+    fd.append("isProfile", "false");
     fd.append("isLive", isLive ? "true" : "false");
     setAdding(true);
     setAddError("");
     try {
       const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
       if (res.ok) {
-        setCount((c) => c + 1);
+        markLoaded(nextIdx);
         setRefreshKey((k) => k + 1);
         setShowAdd(false);
         stopCamera();
@@ -245,7 +253,6 @@ function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
   }
 
   async function jadikanProfil(idx: number) {
-    // Download the extra photo and re-upload as profile
     try {
       const imgRes = await fetch(`/api/photos/${kode}?index=${idx}&r=${refreshKey}`);
       if (!imgRes.ok) return;
@@ -256,7 +263,7 @@ function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
       fd.append("isProfile", "true");
       fd.append("isLive", "false");
       const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
-      if (res.ok) { setRefreshKey((k) => k + 1); setSelected(null); }
+      if (res.ok) { setRefreshKey((k) => k + 1); setSelectedIdx(null); }
     } catch {}
   }
 
@@ -284,121 +291,171 @@ function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
   const profileUrl = `${fotoUrl || `/api/photos/${kode}`}?r=${refreshKey}`;
 
   return (
-    <div className="mb-6 rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Foto Saya</h3>
-        <span className="text-xs text-muted-foreground">{count}/5 foto</span>
-      </div>
-
-      {/* Camera live */}
-      {showCamera && (
-        <div className="mb-4 space-y-2">
-          <div className="relative overflow-hidden rounded-xl bg-black aspect-[4/3] max-h-56">
-            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-            <div className="absolute bottom-3 inset-x-0 flex justify-center gap-3">
-              <button type="button" onClick={captureFromCamera} disabled={adding}
-                className="h-12 w-12 rounded-full bg-white border-4 border-primary shadow-lg flex items-center justify-center text-xl">
-                📸
-              </button>
-              <button type="button" onClick={stopCamera}
-                className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center text-sm">
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Grid foto */}
-      <div className="flex gap-3 flex-wrap">
-        {/* Foto profil */}
-        <div className="relative cursor-pointer" onClick={() => setSelected(selected === 0 ? null : 0)}>
-          <img
-            src={profileUrl}
-            alt="Foto profil"
-            className={`h-24 w-24 rounded-xl object-cover border-2 transition-all ${selected === 0 ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
-          />
-          <span className="absolute top-1 left-1 rounded-full bg-accent text-white text-[9px] font-bold px-1.5 py-0.5 leading-tight shadow">
-            ★ PROFIL
-          </span>
-          {fotoLiveVerified && (
-            <span className="absolute bottom-1 left-1 right-1 rounded-full bg-adat-aman text-white text-[9px] font-bold text-center py-0.5 shadow">
-              ✓ LIVE
-            </span>
-          )}
-        </div>
-
-        {/* Foto tambahan */}
-        {extraIndices.map((idx) => (
-          <div key={idx} className="relative cursor-pointer" onClick={() => setSelected(selected === idx ? null : idx)}>
-            <img
-              src={`/api/photos/${kode}?index=${idx}&r=${refreshKey}`}
-              alt={`Foto ${idx}`}
-              className={`h-24 w-24 rounded-xl object-cover border-2 transition-all ${selected === idx ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          </div>
-        ))}
-
-        {/* Tombol tambah */}
-        {count < MAX && !showCamera && (
+    <>
+      {/* Lightbox */}
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
           <button
             type="button"
-            onClick={() => { setShowAdd(true); setAddError(""); }}
-            className="h-24 w-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
-          >
-            <span className="text-2xl">+</span>
-            <span className="text-[10px]">Tambah</span>
-          </button>
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-xl hover:bg-white/30"
+            onClick={() => setPreviewUrl(null)}
+          >✕</button>
+          <img
+            src={previewUrl}
+            alt="Preview"
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground">Foto Saya</h3>
+          <span className="text-xs text-muted-foreground">{totalLoaded}/5 foto · klik foto untuk zoom</span>
+        </div>
+
+        {/* Camera live */}
+        {showCamera && (
+          <div className="mb-4">
+            <div className="relative overflow-hidden rounded-xl bg-black aspect-[4/3] max-h-64">
+              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              <div className="absolute bottom-3 inset-x-0 flex justify-center gap-3">
+                <button type="button" onClick={captureFromCamera} disabled={adding}
+                  className="h-12 w-12 rounded-full bg-white border-4 border-primary shadow-lg flex items-center justify-center text-2xl">
+                  📸
+                </button>
+                <button type="button" onClick={stopCamera}
+                  className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center">
+                  ✕
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Grid foto */}
+        <div className="flex gap-3 flex-wrap">
+          {/* Foto profil */}
+          <div className="relative group">
+            <img
+              src={profileUrl}
+              alt="Foto profil"
+              onClick={() => setPreviewUrl(profileUrl)}
+              className={`h-24 w-24 rounded-xl object-cover border-2 cursor-zoom-in transition-all group-hover:brightness-90 ${selectedIdx === 0 ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+            />
+            <span className="absolute top-1 left-1 rounded-full bg-accent text-white text-[9px] font-bold px-1.5 py-0.5 leading-tight shadow pointer-events-none">
+              ★ PROFIL
+            </span>
+            {fotoLiveVerified && (
+              <span className="absolute bottom-1 left-1 right-1 rounded-full bg-adat-aman text-white text-[9px] font-bold text-center py-0.5 shadow pointer-events-none">
+                ✓ LIVE
+              </span>
+            )}
+            {/* Overlay action */}
+            <button
+              type="button"
+              onClick={() => setSelectedIdx(selectedIdx === 0 ? null : 0)}
+              className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-all"
+            />
+          </div>
+
+          {/* Foto tambahan — selalu probe index 2-5, tampil jika onLoad */}
+          {ALL_EXTRA.map((idx) => {
+            const src = `/api/photos/${kode}?index=${idx}&r=${refreshKey}`;
+            return (
+              <div
+                key={idx}
+                className={`relative group ${loadedExtras.has(idx) ? "block" : "hidden"}`}
+              >
+                <img
+                  src={src}
+                  alt={`Foto ${idx}`}
+                  onLoad={() => markLoaded(idx)}
+                  onError={() => markFailed(idx)}
+                  onClick={() => setPreviewUrl(src)}
+                  className={`h-24 w-24 rounded-xl object-cover border-2 cursor-zoom-in transition-all group-hover:brightness-90 ${selectedIdx === idx ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                />
+                {/* Overlay action */}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setSelectedIdx(selectedIdx === idx ? null : idx); }}
+                  className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/10 transition-all"
+                />
+              </div>
+            );
+          })}
+
+          {/* Tombol tambah */}
+          {totalLoaded < MAX && !showCamera && (
+            <button
+              type="button"
+              onClick={() => { setShowAdd(true); setSelectedIdx(null); setAddError(""); }}
+              className="h-24 w-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
+            >
+              <span className="text-2xl font-light">+</span>
+              <span className="text-[10px]">Tambah</span>
+            </button>
+          )}
+        </div>
+
+        {/* Aksi foto terpilih */}
+        {selectedIdx !== null && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setPreviewUrl(selectedIdx === 0 ? profileUrl : `/api/photos/${kode}?index=${selectedIdx}&r=${refreshKey}`)}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors"
+            >
+              🔍 Lihat Besar
+            </button>
+            {selectedIdx !== 0 && (
+              <button type="button" onClick={() => jadikanProfil(selectedIdx)}
+                className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors">
+                ★ Jadikan Foto Profil
+              </button>
+            )}
+            {selectedIdx === 0 && (
+              <span className="text-xs text-muted-foreground py-1">Ini foto profil utama yang dilihat kandidat lain</span>
+            )}
+            <button type="button" onClick={() => setSelectedIdx(null)}
+              className="ml-auto rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Tutup
+            </button>
+          </div>
+        )}
+
+        {/* Modal tambah foto */}
+        {showAdd && !showCamera && (
+          <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
+            <p className="text-sm font-medium text-foreground">Tambah foto baru</p>
+            <div className="flex gap-3">
+              <button type="button" onClick={startCamera}
+                className="flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors">
+                <span className="text-2xl">📸</span>
+                <span className="text-xs font-medium text-foreground">Foto Live</span>
+                <span className="text-[10px] text-adat-aman font-semibold">+ Badge Terverifikasi</span>
+              </button>
+              <label className="flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors cursor-pointer">
+                <span className="text-2xl">🖼️</span>
+                <span className="text-xs font-medium text-foreground">Dari Galeri</span>
+                <span className="text-[10px] text-muted-foreground">JPG/PNG/WebP · 5MB</span>
+                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
+              </label>
+            </div>
+            {addError && <p className="text-xs text-red-600">{addError}</p>}
+            {adding && <p className="text-xs text-muted-foreground animate-pulse">Mengunggah foto...</p>}
+            <button type="button" onClick={() => setShowAdd(false)}
+              className="text-xs text-muted-foreground hover:text-foreground">
+              Batal
+            </button>
+          </div>
         )}
       </div>
-
-      {/* Aksi foto yang dipilih */}
-      {selected !== null && (
-        <div className="mt-3 flex gap-2 flex-wrap">
-          {selected !== 0 && (
-            <button type="button" onClick={() => jadikanProfil(selected as number)}
-              className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors">
-              ★ Jadikan Foto Profil
-            </button>
-          )}
-          {selected === 0 && (
-            <p className="text-xs text-muted-foreground py-1.5">Ini adalah foto profil utama kamu yang dilihat kandidat lain.</p>
-          )}
-          <button type="button" onClick={() => setSelected(null)}
-            className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-            Tutup
-          </button>
-        </div>
-      )}
-
-      {/* Modal tambah foto */}
-      {showAdd && !showCamera && (
-        <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
-          <p className="text-sm font-medium text-foreground">Tambah foto baru</p>
-          <div className="flex gap-3">
-            <button type="button" onClick={startCamera}
-              className="flex-1 flex flex-col items-center gap-1 rounded-lg border border-border bg-card py-3 text-sm hover:border-primary/50 transition-colors">
-              <span className="text-xl">📸</span>
-              <span className="text-xs text-muted-foreground">Foto Live</span>
-              <span className="text-[9px] text-adat-aman font-semibold">+ Badge Terverifikasi</span>
-            </button>
-            <label className="flex-1 flex flex-col items-center gap-1 rounded-lg border border-border bg-card py-3 text-sm hover:border-primary/50 transition-colors cursor-pointer">
-              <span className="text-xl">🖼️</span>
-              <span className="text-xs text-muted-foreground">Dari Galeri</span>
-              <span className="text-[9px] text-muted-foreground">JPG/PNG/WebP · 5MB</span>
-              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
-            </label>
-          </div>
-          {addError && <p className="text-xs text-red-600">{addError}</p>}
-          {adding && <p className="text-xs text-muted-foreground">Mengunggah...</p>}
-          <button type="button" onClick={() => setShowAdd(false)}
-            className="text-xs text-muted-foreground hover:text-foreground">
-            Batal
-          </button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -766,7 +823,6 @@ export default function HasilPage() {
         <FotoGaleri
           kode={peserta.kode}
           fotoUrl={peserta.fotoUrl}
-          fotoCount={peserta.fotoCount}
           fotoLiveVerified={peserta.fotoLiveVerified}
         />
 
