@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { StepIndicator } from "@/components/daftar/step-indicator";
 import { FormField } from "@/components/daftar/form-field";
@@ -71,16 +71,16 @@ const ROKOK = ["Tidak merokok", "Kadang", "Ya, rutin"] as const;
 const ALKOHOL = ["Tidak sama sekali", "Sesekali di acara keluarga", "Ya, sosial"] as const;
 const ANAK_KE = ["Anak sulung", "Anak tengah", "Anak bungsu", "Anak tunggal"] as const;
 const PENDIDIKAN = ["SMA/SMK", "D3", "S1", "S2", "S3"] as const;
-const KERJA = ["Karyawan tetap", "Karyawan kontrak", "Wiraswasta", "Profesional/Freelance", "PNS/TNI/Polri", "Sedang mencari"] as const;
+const KERJA = ["Karyawan swasta", "Wiraswasta/Pengusaha/Entrepreneur", "Profesional/Freelance", "PNS/TNI/Polri", "Sedang mencari"] as const;
 const SEDIA = ["Ya", "Bisa dipertimbangkan", "Tidak"] as const;
 const TIMELINE = ["Dalam 1 tahun", "1–2 tahun", "2–3 tahun", "Belum tahu"] as const;
 const TABUNGAN = ["Sudah ada", "Sedang menabung", "Belum mulai"] as const;
 const ANAK_OPT = ["Ingin 1–2 anak", "Ingin 3+ anak", "Belum memutuskan"] as const;
-const ORTU = ["Saya sendiri", "Berdua dengan pasangan", "Bersama orang tua"] as const;
+const ORTU = ["Berdua dengan pasangan", "Bersama orang tua"] as const;
 const BAHASA_KASIH = ["Quality Time", "Acts of Service", "Physical Touch", "Words of Affirmation", "Receiving Gifts"] as const;
 const KONFLIK = ["Bicara segera", "Butuh waktu dulu", "Menghindari konflik"] as const;
 const BOLEH_HUBUNG = ["Ya, silakan hubungkan", "Saya ingin pertimbangkan dulu", "Tidak, hanya ingin tahu hasil"] as const;
-const KLG = ["1", "2", "3", "4", "5"] as const;
+const KLG = ["1", "2", "3", "4", "5", ">5"] as const;
 const INTRO = ["1", "2", "3", "4", "5"] as const;
 const BERAT_BADAN = ["Kurus", "Sedang", "Berisi"] as const;
 const MINAT_OPTIONS = [
@@ -97,11 +97,15 @@ export default function DaftarPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [kode, setKode] = useState("");
-  const [fotoFile, setFotoFile] = useState<File | null>(null);
-  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [fotoUploaded, setFotoUploaded] = useState(false);
-  const [fotoLoading, setFotoLoading] = useState(false);
+  type FotoEntry = { id: string; preview: string; isLive: boolean; uploaded: boolean; blob?: Blob };
+  const [fotos, setFotos] = useState<FotoEntry[]>([]);
+  const [profileId, setProfileId] = useState<string>("");
+  const [showCamera, setShowCamera] = useState(false);
   const [fotoError, setFotoError] = useState("");
+  const [fotoUploadLoading, setFotoUploadLoading] = useState(false);
+  const [fotosAllDone, setFotosAllDone] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     // Log sekali per sesi — hindari double count dari refresh
@@ -156,147 +160,291 @@ export default function DaftarPage() {
     }
   }
 
-  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
-      setFotoError("Format harus JPG, PNG, atau WebP");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      setFotoError("Ukuran maksimal 2MB");
+  function addFotoFromFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (fotos.length + files.length > 5) {
+      setFotoError("Maksimal 5 foto");
       return;
     }
     setFotoError("");
-    setFotoFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setFotoPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  }
-
-  async function uploadFoto() {
-    if (!fotoFile || !kode) return;
-    setFotoLoading(true);
-    setFotoError("");
-    try {
-      const fd = new FormData();
-      fd.append("foto", fotoFile);
-      const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
-      const result = await res.json();
-      if (!res.ok) {
-        setFotoError(result.error || "Gagal upload foto");
+    files.forEach((file) => {
+      if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+        setFotoError("Format harus JPG, PNG, atau WebP");
         return;
       }
-      setFotoUploaded(true);
+      if (file.size > 5 * 1024 * 1024) {
+        setFotoError("Ukuran maksimal 5MB per foto");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const id = `g_${Date.now()}_${Math.random()}`;
+        setFotos((prev) => {
+          const entry: FotoEntry = { id, preview: ev.target?.result as string, isLive: false, uploaded: false, blob: file };
+          const next = [...prev, entry];
+          if (!profileId && next.length === 1) setProfileId(id);
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      streamRef.current = stream;
+      setShowCamera(true);
+      setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      }, 100);
+    } catch {
+      setFotoError("Kamera tidak dapat diakses. Gunakan pilih dari galeri.");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setShowCamera(false);
+  }
+
+  function captureFromCamera() {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const preview = canvas.toDataURL("image/jpeg");
+      const id = `live_${Date.now()}`;
+      setFotos((prev) => {
+        const entry: FotoEntry = { id, preview, isLive: true, uploaded: false, blob };
+        const next = [...prev, entry];
+        if (!profileId && next.length === 1) setProfileId(id);
+        return next;
+      });
+    }, "image/jpeg", 0.92);
+    stopCamera();
+  }
+
+  function removeFoto(id: string) {
+    setFotos((prev) => {
+      const next = prev.filter((f) => f.id !== id);
+      if (profileId === id && next.length > 0) setProfileId(next[0].id);
+      if (next.length === 0) setProfileId("");
+      return next;
+    });
+  }
+
+  async function uploadAllFotos() {
+    if (!kode || fotos.length < 3) return;
+    setFotoUploadLoading(true);
+    setFotoError("");
+    try {
+      let index = 1;
+      for (const entry of fotos) {
+        const isProfile = entry.id === profileId;
+        const fd = new FormData();
+        const blob = entry.blob ?? await (await fetch(entry.preview)).blob();
+        fd.append("foto", blob, `foto_${index}.jpg`);
+        fd.append("index", String(index));
+        fd.append("isProfile", isProfile ? "true" : "false");
+        fd.append("isLive", entry.isLive ? "true" : "false");
+        const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
+        if (!res.ok) {
+          const r = await res.json();
+          setFotoError(r.error || "Gagal upload foto");
+          return;
+        }
+        index++;
+      }
+      setFotosAllDone(true);
     } catch {
       setFotoError("Gagal upload foto. Periksa koneksi Anda.");
     } finally {
-      setFotoLoading(false);
+      setFotoUploadLoading(false);
     }
   }
 
   if (submitted) {
+    const MIN_FOTO = 3;
+    const MAX_FOTO = 5;
+    const siapUpload = fotos.length >= MIN_FOTO && !!profileId;
+
     return (
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col bg-background">
         <nav className="border-b border-border bg-card">
           <div className="mx-auto flex h-14 max-w-6xl items-center px-6">
-            <Link href="/" className="text-xl font-bold tracking-[0.15em] text-primary">
-              PARIBAN
-            </Link>
+            <Link href="/" className="text-xl font-bold tracking-[0.15em] text-primary">PARIBAN</Link>
           </div>
         </nav>
-        <div className="flex flex-1 items-center justify-center px-6 py-10">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-adat-aman/20 text-3xl">
-                ✓
-              </div>
-              <h1 className="font-heading text-3xl font-bold text-foreground">
-                Pendaftaran Berhasil!
-              </h1>
-              <p className="mt-3 text-muted-foreground leading-relaxed">
-                Terima kasih, <strong>{data.nama}</strong>. Kode peserta Anda:{" "}
-                <strong className="font-mono text-primary">{kode}</strong>
-              </p>
+
+        <div className="mx-auto w-full max-w-lg px-6 py-10">
+          {/* Header sukses */}
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-adat-aman/20 text-3xl">✓</div>
+            <h1 className="font-heading text-3xl font-bold text-foreground">Pendaftaran Berhasil!</h1>
+            <p className="mt-3 text-muted-foreground">
+              Terima kasih, <strong>{data.nama}</strong>. Kode peserta:{" "}
+              <strong className="font-mono text-primary">{kode}</strong>
+            </p>
+          </div>
+
+          {fotosAllDone ? (
+            /* Selesai */
+            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+              <p className="text-lg font-semibold text-foreground mb-1">Foto berhasil diunggah ✓</p>
+              <p className="text-sm text-muted-foreground mb-6">Profil Anda sudah lengkap dan siap ditemukan!</p>
+              <Link
+                href={`/hasil/${kode}`}
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Lihat Hasil Matching →
+              </Link>
             </div>
-
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <h2 className="font-semibold text-foreground">
-                Foto Profil{" "}
-                <span className="text-xs font-normal text-muted-foreground">(Opsional)</span>
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tambahkan foto agar kandidat pasangan bisa mengenal Anda lebih baik.
-              </p>
-
-              {fotoUploaded ? (
-                <div className="mt-5 flex flex-col items-center gap-3">
-                  {fotoPreview && (
-                    <img
-                      src={fotoPreview}
-                      alt="Foto profil"
-                      className="h-24 w-24 rounded-full object-cover border-2 border-adat-aman/40"
+          ) : (
+            <div className="rounded-2xl border border-border bg-card p-6 space-y-5">
+              <div>
+                <h2 className="font-semibold text-foreground">Foto Profil</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Wajib unggah <strong>minimal 3 foto</strong>. Peserta lain hanya mau chat jika ada foto nyata.
+                  Pilih 1 sebagai foto utama profil.
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="h-1.5 flex-1 rounded-full bg-border overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${Math.min(100, (fotos.length / MIN_FOTO) * 100)}%` }}
                     />
-                  )}
-                  <p className="text-sm font-medium text-adat-aman">Foto berhasil diunggah ✓</p>
+                  </div>
+                  <span className={`text-xs font-medium ${fotos.length >= MIN_FOTO ? "text-adat-aman" : "text-muted-foreground"}`}>
+                    {fotos.length}/{MIN_FOTO} foto
+                  </span>
                 </div>
-              ) : (
-                <div className="mt-5 space-y-4">
-                  {fotoPreview ? (
-                    <div className="flex items-center gap-4">
+              </div>
+
+              {/* Kamera live */}
+              {showCamera && (
+                <div className="space-y-3">
+                  <div className="relative overflow-hidden rounded-xl bg-black aspect-[4/3]">
+                    <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                    <div className="absolute bottom-3 inset-x-0 flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={captureFromCamera}
+                        className="h-12 w-12 rounded-full bg-white border-4 border-primary shadow-lg flex items-center justify-center text-xl"
+                      >📸</button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center text-sm"
+                      >✕</button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">Foto live-camera akan mendapat badge "Terverifikasi Live"</p>
+                </div>
+              )}
+
+              {/* Grid foto */}
+              {fotos.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {fotos.map((f) => (
+                    <div key={f.id} className="relative group">
                       <img
-                        src={fotoPreview}
-                        alt="Preview"
-                        className="h-20 w-20 rounded-full object-cover border-2 border-border"
+                        src={f.preview}
+                        alt="foto"
+                        className={`aspect-square w-full rounded-xl object-cover border-2 transition-all ${
+                          f.id === profileId ? "border-primary" : "border-border"
+                        }`}
                       />
-                      <div className="flex-1">
-                        <p className="text-sm text-foreground">{fotoFile?.name}</p>
+                      {/* Badge live */}
+                      {f.isLive && (
+                        <span className="absolute top-1.5 left-1.5 rounded-full bg-adat-aman text-white text-[9px] font-bold px-1.5 py-0.5 leading-tight shadow">
+                          ✓ LIVE
+                        </span>
+                      )}
+                      {/* Badge profil */}
+                      {f.id === profileId && (
+                        <span className="absolute bottom-1.5 inset-x-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold text-center py-0.5 shadow">
+                          PROFIL UTAMA
+                        </span>
+                      )}
+                      {/* Overlay action */}
+                      <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/40 transition-all flex flex-col items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                        {f.id !== profileId && (
+                          <button
+                            type="button"
+                            onClick={() => setProfileId(f.id)}
+                            className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-foreground shadow"
+                          >
+                            Jadikan Profil
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() => { setFotoFile(null); setFotoPreview(null); }}
-                          className="mt-1 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => removeFoto(f.id)}
+                          className="rounded-full bg-red-500/90 px-2 py-0.5 text-[10px] font-semibold text-white shadow"
                         >
-                          Ganti foto
+                          Hapus
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-secondary/30 transition-colors">
-                      <span className="text-3xl mb-2">📷</span>
-                      <span className="text-sm font-medium text-foreground">Pilih foto</span>
-                      <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP — max 2MB</span>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={handleFotoChange}
-                        className="hidden"
-                      />
-                    </label>
-                  )}
-
-                  {fotoError && <p className="text-sm text-red-600">{fotoError}</p>}
-
-                  {fotoFile && (
-                    <button
-                      type="button"
-                      onClick={uploadFoto}
-                      disabled={fotoLoading}
-                      className="w-full inline-flex h-10 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                    >
-                      {fotoLoading ? "Mengunggah..." : "Upload Foto"}
-                    </button>
-                  )}
+                  ))}
                 </div>
               )}
-            </div>
 
-            <Link
-              href="/"
-              className="mt-4 inline-flex w-full h-10 items-center justify-center rounded-lg border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors"
-            >
-              {fotoUploaded ? "Selesai → Beranda" : "Lewati, kembali ke Beranda"}
-            </Link>
-          </div>
+              {/* Tombol tambah foto */}
+              {fotos.length < MAX_FOTO && !showCamera && (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border py-4 text-sm font-medium text-foreground hover:border-primary/50 hover:bg-secondary/30 transition-colors"
+                  >
+                    <span className="text-xl">📸</span>
+                    <span>Ambil Foto Live</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">Dapat badge Terverifikasi</span>
+                  </button>
+                  <label className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border py-4 text-sm font-medium text-foreground hover:border-primary/50 hover:bg-secondary/30 transition-colors cursor-pointer">
+                    <span className="text-xl">🖼️</span>
+                    <span>Dari Galeri</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">JPG, PNG, WebP · max 5MB</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      multiple
+                      onChange={addFotoFromFile}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              )}
+
+              {/* Info badge */}
+              <div className="rounded-lg bg-secondary/50 px-4 py-3 text-xs text-muted-foreground space-y-1">
+                <p>📸 <strong>Foto Live</strong> — diambil langsung dari kamera, mendapat badge hijau "Terverifikasi". Kandidat lebih yakin ini profil nyata, bukan palsu.</p>
+                <p>🖼️ <strong>Dari Galeri</strong> — upload foto dari ponsel/komputer, tanpa badge verifikasi.</p>
+              </div>
+
+              {fotoError && <p className="text-sm text-red-600">{fotoError}</p>}
+
+              <button
+                type="button"
+                onClick={uploadAllFotos}
+                disabled={!siapUpload || fotoUploadLoading}
+                className="w-full inline-flex h-11 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-40"
+              >
+                {fotoUploadLoading
+                  ? "Mengunggah foto..."
+                  : !siapUpload
+                    ? `Tambahkan ${MIN_FOTO - fotos.length} foto lagi`
+                    : "Selesai & Upload Foto"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -406,7 +554,7 @@ export default function DaftarPage() {
                   </div>
                 </div>
                 <FormField label="Jika cocok, boleh dihubungkan?" name="bolehHubung" value={data.bolehHubung} onChange={set} type="select" options={BOLEH_HUBUNG} required />
-                <FormField label="Catatan tambahan (opsional)" name="catatan" value={data.catatan} onChange={set} type="textarea" placeholder="Apakah ada hal khusus yang ingin Anda sampaikan?" />
+                <FormField label="Deskripsi singkat diri (opsional)" name="catatan" value={data.catatan} onChange={set} type="textarea" placeholder="cth: Saya seorang yang aktif dan humoris, suka hiking dan memasak masakan Batak. Di akhir pekan saya biasanya ke gereja lalu makan siang bersama keluarga besar. Saya mencari pasangan yang hangat, takut Tuhan, dan bisa menjadi sahabat sekaligus teman hidup." />
               </div>
             </>
           )}

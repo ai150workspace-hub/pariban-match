@@ -43,7 +43,9 @@ export interface Peserta {
   inisial: string;
   statusData: string;
 
-  foto?: string;    // file extension: "jpg" | "png" | "webp"
+  foto?: string;          // file extension: "jpg" | "png" | "webp"
+  fotoCount?: number;     // jumlah foto yang diunggah
+  fotoLiveVerified?: boolean; // apakah foto profil diambil langsung dari kamera
   premium?: boolean;
   premiumExpiry?: string;
   premiumPaket?: "trial" | "3bln" | "6bln";
