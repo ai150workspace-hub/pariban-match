@@ -485,7 +485,7 @@ export default function AdminPage() {
                           disabled={banningKode === p.kode}
                           className={`inline-flex h-7 items-center gap-1 rounded-full px-3 text-xs font-semibold transition-colors ${p.banned ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"}`}
                         >
-                          {banningKode === p.kode ? "..." : p.banned ? "✓ Buka Blokir" : "🚫 Banned"}
+                          {banningKode === p.kode ? "..." : p.banned ? "✓ Buka Blokir" : "🚫 Blokir Akun"}
                         </button>
                       </td>
                       <td className="px-4 py-3">
@@ -552,7 +552,7 @@ export default function AdminPage() {
                               onClick={() => { const p = peserta.find(p => p.kode === dilaporkan); toggleBan(dilaporkan, p?.banned ?? false); }}
                               disabled={banningKode === dilaporkan}
                               className="rounded-lg bg-red-100 px-2.5 py-1 text-[11px] font-medium text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 transition-colors whitespace-nowrap">
-                              {banningKode === dilaporkan ? "..." : "🚫 Banned"}
+                              {banningKode === dilaporkan ? "..." : "🚫 Blokir Akun"}
                             </button>
                           </div>
                         </td>
