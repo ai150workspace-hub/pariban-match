@@ -255,8 +255,9 @@ export default function DaftarPage() {
         fd.append("isLive", entry.isLive ? "true" : "false");
         const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
         if (!res.ok) {
-          const r = await res.json();
-          setFotoError(r.error || "Gagal upload foto");
+          let errMsg = "Gagal upload foto";
+          try { const r = await res.json(); errMsg = r.error || errMsg; } catch {}
+          setFotoError(errMsg);
           return;
         }
         index++;

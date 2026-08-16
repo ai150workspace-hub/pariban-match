@@ -90,24 +90,26 @@ export async function POST(
   }
 
   if (isProfile) {
-    await updatePeserta(kode, {
-      foto: ext,
-      fotoLiveVerified: isLive,
-    });
-  }
-
-  // Update fotoCount: always increment regardless of profile or extra
-  // We track it loosely — just use index as a proxy for count
-  const numIndex = parseInt(index, 10);
-  if (!isNaN(numIndex)) {
-    // Load current and update if count is higher
-    const { loadPeserta } = await import("@/lib/storage");
-    const all = await loadPeserta();
-    const current = all.find((p) => p.kode === kode);
-    if (current && (!current.fotoCount || numIndex > current.fotoCount)) {
-      await updatePeserta(kode, { fotoCount: numIndex });
+    try {
+      await updatePeserta(kode, { foto: ext, fotoLiveVerified: isLive });
+    } catch {
+      // Non-critical if new columns don't exist yet — foto extension update only
+      await updatePeserta(kode, { foto: ext }).catch(() => {});
     }
   }
+
+  // Update fotoCount — non-critical, ignore failures
+  try {
+    const numIndex = parseInt(index, 10);
+    if (!isNaN(numIndex)) {
+      const { loadPeserta } = await import("@/lib/storage");
+      const all = await loadPeserta();
+      const current = all.find((p) => p.kode === kode);
+      if (current && (!current.fotoCount || numIndex > current.fotoCount)) {
+        await updatePeserta(kode, { fotoCount: numIndex }).catch(() => {});
+      }
+    }
+  } catch {}
 
   return NextResponse.json({ ok: true, storageKey });
 }
