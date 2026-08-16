@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
@@ -114,6 +114,8 @@ interface PesertaInfo {
   ortu: string;
   catatan: string;
   fotoUrl: string | null;
+  fotoCount: number;
+  fotoLiveVerified: boolean;
   premium: boolean;
   premiumExpiry: string | null;
   premiumPaket: string | null;
@@ -175,6 +177,227 @@ function ProfilRow({ label, value }: { label: string; value?: string }) {
     <div className="flex items-start gap-3 py-2 border-b border-border last:border-0">
       <span className="w-32 shrink-0 text-xs text-muted-foreground">{label}</span>
       <span className="text-sm text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function FotoGaleri({ kode, fotoUrl, fotoCount: initCount, fotoLiveVerified }: {
+  kode: string;
+  fotoUrl: string | null;
+  fotoCount: number;
+  fotoLiveVerified: boolean;
+}) {
+  const MAX = 5;
+  const [count, setCount] = useState(initCount);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null); // null=profile, 2-5=extra
+  const [showAdd, setShowAdd] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [addError, setAddError] = useState("");
+  const [adding, setAdding] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const extraIndices = Array.from({ length: Math.max(0, count - 1) }, (_, i) => i + 2);
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+      streamRef.current = stream;
+      setShowCamera(true);
+      setTimeout(() => { if (videoRef.current) videoRef.current.srcObject = stream; }, 100);
+    } catch {
+      setAddError("Kamera tidak dapat diakses. Gunakan pilih dari galeri.");
+    }
+  }
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setShowCamera(false);
+  }
+
+  async function uploadPhoto(blob: Blob, isLive: boolean, isProfile = false) {
+    const nextIdx = count + 1;
+    const fd = new FormData();
+    fd.append("foto", blob, `foto_${nextIdx}.jpg`);
+    fd.append("index", String(nextIdx));
+    fd.append("isProfile", isProfile ? "true" : "false");
+    fd.append("isLive", isLive ? "true" : "false");
+    setAdding(true);
+    setAddError("");
+    try {
+      const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
+      if (res.ok) {
+        setCount((c) => c + 1);
+        setRefreshKey((k) => k + 1);
+        setShowAdd(false);
+        stopCamera();
+      } else {
+        const r = await res.json().catch(() => ({}));
+        setAddError(r.error || "Gagal upload foto");
+      }
+    } catch {
+      setAddError("Gagal upload foto. Coba lagi.");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function jadikanProfil(idx: number) {
+    // Download the extra photo and re-upload as profile
+    try {
+      const imgRes = await fetch(`/api/photos/${kode}?index=${idx}&r=${refreshKey}`);
+      if (!imgRes.ok) return;
+      const blob = await imgRes.blob();
+      const fd = new FormData();
+      fd.append("foto", blob, "profile.jpg");
+      fd.append("index", String(idx));
+      fd.append("isProfile", "true");
+      fd.append("isLive", "false");
+      const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
+      if (res.ok) { setRefreshKey((k) => k + 1); setSelected(null); }
+    } catch {}
+  }
+
+  function captureFromCamera() {
+    if (!videoRef.current) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      stopCamera();
+      uploadPhoto(blob, true);
+    }, "image/jpeg", 0.92);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setAddError("Ukuran maksimal 5MB"); return; }
+    uploadPhoto(file, false);
+  }
+
+  const profileUrl = `${fotoUrl || `/api/photos/${kode}`}?r=${refreshKey}`;
+
+  return (
+    <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-foreground">Foto Saya</h3>
+        <span className="text-xs text-muted-foreground">{count}/5 foto</span>
+      </div>
+
+      {/* Camera live */}
+      {showCamera && (
+        <div className="mb-4 space-y-2">
+          <div className="relative overflow-hidden rounded-xl bg-black aspect-[4/3] max-h-56">
+            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+            <div className="absolute bottom-3 inset-x-0 flex justify-center gap-3">
+              <button type="button" onClick={captureFromCamera} disabled={adding}
+                className="h-12 w-12 rounded-full bg-white border-4 border-primary shadow-lg flex items-center justify-center text-xl">
+                📸
+              </button>
+              <button type="button" onClick={stopCamera}
+                className="h-10 w-10 rounded-full bg-black/60 text-white flex items-center justify-center text-sm">
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Grid foto */}
+      <div className="flex gap-3 flex-wrap">
+        {/* Foto profil */}
+        <div className="relative cursor-pointer" onClick={() => setSelected(selected === 0 ? null : 0)}>
+          <img
+            src={profileUrl}
+            alt="Foto profil"
+            className={`h-24 w-24 rounded-xl object-cover border-2 transition-all ${selected === 0 ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+          />
+          <span className="absolute top-1 left-1 rounded-full bg-accent text-white text-[9px] font-bold px-1.5 py-0.5 leading-tight shadow">
+            ★ PROFIL
+          </span>
+          {fotoLiveVerified && (
+            <span className="absolute bottom-1 left-1 right-1 rounded-full bg-adat-aman text-white text-[9px] font-bold text-center py-0.5 shadow">
+              ✓ LIVE
+            </span>
+          )}
+        </div>
+
+        {/* Foto tambahan */}
+        {extraIndices.map((idx) => (
+          <div key={idx} className="relative cursor-pointer" onClick={() => setSelected(selected === idx ? null : idx)}>
+            <img
+              src={`/api/photos/${kode}?index=${idx}&r=${refreshKey}`}
+              alt={`Foto ${idx}`}
+              className={`h-24 w-24 rounded-xl object-cover border-2 transition-all ${selected === idx ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          </div>
+        ))}
+
+        {/* Tombol tambah */}
+        {count < MAX && !showCamera && (
+          <button
+            type="button"
+            onClick={() => { setShowAdd(true); setAddError(""); }}
+            className="h-24 w-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/60 hover:text-primary transition-colors"
+          >
+            <span className="text-2xl">+</span>
+            <span className="text-[10px]">Tambah</span>
+          </button>
+        )}
+      </div>
+
+      {/* Aksi foto yang dipilih */}
+      {selected !== null && (
+        <div className="mt-3 flex gap-2 flex-wrap">
+          {selected !== 0 && (
+            <button type="button" onClick={() => jadikanProfil(selected as number)}
+              className="rounded-lg border border-accent/50 bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors">
+              ★ Jadikan Foto Profil
+            </button>
+          )}
+          {selected === 0 && (
+            <p className="text-xs text-muted-foreground py-1.5">Ini adalah foto profil utama kamu yang dilihat kandidat lain.</p>
+          )}
+          <button type="button" onClick={() => setSelected(null)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Tutup
+          </button>
+        </div>
+      )}
+
+      {/* Modal tambah foto */}
+      {showAdd && !showCamera && (
+        <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
+          <p className="text-sm font-medium text-foreground">Tambah foto baru</p>
+          <div className="flex gap-3">
+            <button type="button" onClick={startCamera}
+              className="flex-1 flex flex-col items-center gap-1 rounded-lg border border-border bg-card py-3 text-sm hover:border-primary/50 transition-colors">
+              <span className="text-xl">📸</span>
+              <span className="text-xs text-muted-foreground">Foto Live</span>
+              <span className="text-[9px] text-adat-aman font-semibold">+ Badge Terverifikasi</span>
+            </button>
+            <label className="flex-1 flex flex-col items-center gap-1 rounded-lg border border-border bg-card py-3 text-sm hover:border-primary/50 transition-colors cursor-pointer">
+              <span className="text-xl">🖼️</span>
+              <span className="text-xs text-muted-foreground">Dari Galeri</span>
+              <span className="text-[9px] text-muted-foreground">JPG/PNG/WebP · 5MB</span>
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
+            </label>
+          </div>
+          {addError && <p className="text-xs text-red-600">{addError}</p>}
+          {adding && <p className="text-xs text-muted-foreground">Mengunggah...</p>}
+          <button type="button" onClick={() => setShowAdd(false)}
+            className="text-xs text-muted-foreground hover:text-foreground">
+            Batal
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -538,6 +761,14 @@ export default function HasilPage() {
             </div>
           </div>
         )}
+
+        {/* Galeri Foto */}
+        <FotoGaleri
+          kode={peserta.kode}
+          fotoUrl={peserta.fotoUrl}
+          fotoCount={peserta.fotoCount}
+          fotoLiveVerified={peserta.fotoLiveVerified}
+        />
 
         {/* Profil Lengkap Saya */}
         <ProfilLengkapSaya p={peserta} />

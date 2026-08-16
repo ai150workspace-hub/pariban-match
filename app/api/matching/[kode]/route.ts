@@ -94,6 +94,8 @@ export async function GET(
       ortu: target.ortu,
       catatan: target.catatan,
       fotoUrl: target.foto ? `/api/photos/${target.kode}` : null,
+      fotoCount: target.fotoCount ?? 1,
+      fotoLiveVerified: target.fotoLiveVerified ?? false,
       premium: target.premium ?? false,
       premiumExpiry: target.premiumExpiry ?? null,
       premiumPaket: target.premiumPaket ?? null,
