@@ -1,7 +1,8 @@
 "use client";
 
 const STEPS = [
-  "Data Pribadi",
+  "Akun",
+  "Info Detail",
   "Latar Belakang",
   "Preferensi",
   "Kepribadian",
@@ -10,15 +11,15 @@ const STEPS = [
 
 export function StepIndicator({ current }: { current: number }) {
   return (
-    <div className="flex items-center justify-center gap-2 sm:gap-3">
+    <div className="flex items-center justify-center gap-1.5 sm:gap-2">
       {STEPS.map((label, i) => {
         const isActive = i === current;
         const isDone = i < current;
         return (
-          <div key={label} className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2">
+          <div key={label} className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5">
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-colors ${
                   isActive
                     ? "bg-primary text-primary-foreground"
                     : isDone
@@ -29,10 +30,8 @@ export function StepIndicator({ current }: { current: number }) {
                 {isDone ? "✓" : i + 1}
               </div>
               <span
-                className={`hidden text-sm sm:inline ${
-                  isActive
-                    ? "font-semibold text-foreground"
-                    : "text-muted-foreground"
+                className={`hidden text-xs sm:inline ${
+                  isActive ? "font-semibold text-foreground" : "text-muted-foreground"
                 }`}
               >
                 {label}
@@ -40,7 +39,7 @@ export function StepIndicator({ current }: { current: number }) {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className={`h-0.5 w-8 rounded-full sm:w-12 ${
+                className={`h-0.5 w-5 rounded-full sm:w-8 ${
                   isDone ? "bg-primary/30" : "bg-border"
                 }`}
               />

@@ -136,7 +136,7 @@ function DaftarForm() {
   }
 
   function next() {
-    if (step < 4) setStep(step + 1);
+    if (step < 5) setStep(step + 1);
   }
 
   function prev() {
@@ -506,8 +506,8 @@ function DaftarForm() {
         <div className="rounded-2xl border border-border bg-card p-8 sm:p-10">
           {step === 0 && (
             <>
-              <h2 className="text-2xl font-bold text-foreground">Data Pribadi</h2>
-              <p className="mt-1 text-sm text-muted-foreground mb-6">Lengkapi informasi dasar Anda</p>
+              <h2 className="text-2xl font-bold text-foreground">Buat Akun</h2>
+              <p className="mt-1 text-sm text-muted-foreground mb-6">Daftar cepat dengan Google/Facebook atau isi manual</p>
 
               {/* OAuth buttons */}
               <div className="space-y-2.5 mb-6">
@@ -558,18 +558,6 @@ function DaftarForm() {
               <div className="space-y-6">
                 <FormField label="Nama Lengkap" name="nama" value={data.nama} onChange={set} placeholder="Masukkan nama lengkap Anda" required />
                 <FormField label="Email" name="email" value={data.email} onChange={set} type="email" placeholder="contoh@email.com" required />
-                <FormField label="No. WhatsApp" name="wa" value={data.wa} onChange={set} placeholder="08xxxxxxxxxx" required />
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField label="Jenis Kelamin" name="gender" value={data.gender} onChange={set} type="select" options={["Perempuan", "Laki-laki"]} required />
-                  <FormField label="Tahun Lahir" name="tahunLahir" value={data.tahunLahir} onChange={set} type="number" placeholder="cth: 1995" required />
-                </div>
-                <FormField label="Kota Domisili" name="kota" value={data.kota} onChange={set} placeholder="Jakarta" required />
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField label="Agama" name="agama" value={data.agama} onChange={set} type="select" options={AGAMA} required />
-                  <FormField label="Suku" name="suku" value={data.suku} onChange={set} type="select" options={SUKU} required />
-                </div>
-                <MargaSelect value={data.marga} onChange={set} required />
-                <MargaSelect value={data.margaIbu} onChange={set} label="Marga Ibu" name="margaIbu" />
 
                 {/* Password */}
                 <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-4">
@@ -637,6 +625,27 @@ function DaftarForm() {
 
           {step === 1 && (
             <>
+              <h2 className="text-2xl font-bold text-foreground">Info Detail</h2>
+              <p className="mt-1 text-sm text-muted-foreground mb-8">Informasi kontak dan latar belakang Batak Anda</p>
+              <div className="space-y-6">
+                <FormField label="No. WhatsApp" name="wa" value={data.wa} onChange={set} placeholder="08xxxxxxxxxx" required />
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <FormField label="Jenis Kelamin" name="gender" value={data.gender} onChange={set} type="select" options={["Perempuan", "Laki-laki"]} required />
+                  <FormField label="Tahun Lahir" name="tahunLahir" value={data.tahunLahir} onChange={set} type="number" placeholder="cth: 1995" required />
+                </div>
+                <FormField label="Kota Domisili" name="kota" value={data.kota} onChange={set} placeholder="Jakarta" required />
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <FormField label="Agama" name="agama" value={data.agama} onChange={set} type="select" options={AGAMA} required />
+                  <FormField label="Suku" name="suku" value={data.suku} onChange={set} type="select" options={SUKU} required />
+                </div>
+                <MargaSelect value={data.marga} onChange={set} required />
+                <MargaSelect value={data.margaIbu} onChange={set} label="Marga Ibu" name="margaIbu" />
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
               <h2 className="text-2xl font-bold text-foreground">Latar Belakang</h2>
               <p className="mt-1 text-sm text-muted-foreground mb-8">Informasi keluarga dan gaya hidup</p>
               <div className="space-y-6">
@@ -651,7 +660,7 @@ function DaftarForm() {
             </>
           )}
 
-          {step === 2 && (
+          {step === 3 && (
             <>
               <h2 className="text-2xl font-bold text-foreground">Preferensi</h2>
               <p className="mt-1 text-sm text-muted-foreground mb-8">Preferensi pasangan dan kesiapan menikah</p>
@@ -667,7 +676,7 @@ function DaftarForm() {
             </>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <>
               <h2 className="text-2xl font-bold text-foreground">Kepribadian</h2>
               <p className="mt-1 text-sm text-muted-foreground mb-8">Karakter dan cara berkomunikasi</p>
@@ -702,7 +711,7 @@ function DaftarForm() {
             </>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <>
               <h2 className="text-2xl font-bold text-foreground">Bio Profil</h2>
               <p className="mt-1 text-sm text-muted-foreground mb-2">Semua isian di bawah bersifat opsional</p>
@@ -794,7 +803,7 @@ function DaftarForm() {
             ) : (
               <div />
             )}
-            {step < 4 ? (
+            {step < 5 ? (
               <button
                 type="button"
                 onClick={next}
