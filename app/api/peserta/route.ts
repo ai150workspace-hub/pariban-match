@@ -3,6 +3,7 @@ import { addPeserta, loadPeserta } from "@/lib/storage";
 import { inisial } from "@/lib/adat";
 import type { Peserta } from "@/lib/adat/types";
 import { sendKonfirmasiDaftar } from "@/lib/email";
+import { hashPassword } from "@/lib/hash";
 
 export async function GET() {
   const list = await loadPeserta();
@@ -33,8 +34,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Hash password jika disertakan
+    let passwordHash: string | undefined;
+    if (body.password?.trim()) {
+      if (body.password.length < 8) {
+        return NextResponse.json({ error: "Password minimal 8 karakter" }, { status: 400 });
+      }
+      passwordHash = await hashPassword(body.password);
+    }
+
     const peserta: Peserta = {
       kode: "",
+      ...(passwordHash && { passwordHash }),
       nama: body.nama,
       email: body.email,
       wa: body.wa,

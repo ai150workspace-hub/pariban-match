@@ -39,7 +39,7 @@ type DbRow = {
   ortu: string; bahasa_kasih: string; konflik: string;
   introvert: number; boleh_hubung: string; catatan: string;
   inisial: string; status_data: string;
-  foto: string | null; premium: boolean;
+  foto: string | null; premium: boolean; password_hash: string | null;
   premium_expiry: string | null; premium_paket: string | null;
   pekerjaan: string | null; jabatan: string | null;
   tinggi_badan: number | null; berat_badan: string | null;
@@ -65,6 +65,7 @@ function dbToTs(r: DbRow): Peserta {
     bolehHubung: r.boleh_hubung ?? "", catatan: r.catatan ?? "",
     inisial: r.inisial, statusData: r.status_data,
     foto: r.foto ?? undefined, premium: r.premium,
+    passwordHash: r.password_hash ?? undefined,
     premiumExpiry: r.premium_expiry ?? undefined,
     premiumPaket: (r.premium_paket as "trial" | "3bln" | "6bln") ?? undefined,
     pekerjaan: r.pekerjaan ?? undefined,
@@ -92,6 +93,7 @@ function tsToDb(p: Peserta): Record<string, unknown> {
     introvert: p.introvert, boleh_hubung: p.bolehHubung,
     catatan: p.catatan, inisial: p.inisial, status_data: p.statusData,
     ...(p.foto !== undefined && { foto: p.foto }),
+    ...(p.passwordHash !== undefined && { password_hash: p.passwordHash }),
     premium: p.premium ?? false,
     ...(p.premiumExpiry !== undefined && { premium_expiry: p.premiumExpiry }),
     ...(p.premiumPaket !== undefined && { premium_paket: p.premiumPaket }),
@@ -118,7 +120,7 @@ function partialToDb(updates: Partial<Peserta>): Record<string, unknown> {
     sosmedLinkedIn: "sosmed_linkedin", sosmedInstagram: "sosmed_instagram",
     sosmedTikTok: "sosmed_tiktok",
     fotoCount: "foto_count", fotoLiveVerified: "foto_live_verified",
-    banned: "banned",
+    banned: "banned", passwordHash: "password_hash",
   };
   const out: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(updates)) {

@@ -86,11 +86,10 @@ export default function Home() {
             </div>
 
             {/* Stats */}
-            <div className="mt-14 flex gap-16">
+            <div className="mt-14 flex justify-center gap-20">
               {[
                 ["255", "Marga Terverifikasi"],
                 ["22", "Aturan Adat"],
-                ["100%", "Gratis"],
               ].map(([num, label]) => (
                 <div key={label} className="text-center">
                   <p className="text-3xl font-bold text-accent sm:text-4xl">
