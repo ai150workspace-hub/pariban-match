@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+export const dynamic = "force-dynamic";
+
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -93,13 +95,17 @@ const MINAT_OPTIONS = [
   "Teknologi", "Berkebun", "Yoga", "Kuliner", "Volunteering",
 ] as const;
 
-export default function DaftarPage() {
+function DaftarForm() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
-  const [data, setData] = useState(() => {
-    const emailFromOAuth = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") : "";
-    return { ...INITIAL, email: emailFromOAuth ?? "" };
-  });
+  const [data, setData] = useState(INITIAL);
+
+  useEffect(() => {
+    const emailFromOAuth = searchParams.get("email");
+    if (emailFromOAuth) {
+      setData((prev) => ({ ...prev, email: emailFromOAuth }));
+    }
+  }, [searchParams]);
   const [minat, setMinat] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -810,5 +816,17 @@ export default function DaftarPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DaftarPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <DaftarForm />
+    </Suspense>
   );
 }
