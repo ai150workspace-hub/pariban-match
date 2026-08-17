@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       },
     ],
     callbacks: {
-      finish: `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/hasil/${kode}?payment=success`,
+      finish: `${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/hasil?payment=success`,
     },
   };
 

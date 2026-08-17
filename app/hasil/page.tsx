@@ -1,21 +1,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import HasilClient from "../HasilClient";
+import HasilClient from "./HasilClient";
 
 export const dynamic = "force-dynamic";
 
-// Rute ini dipertahankan untuk akses admin (/hasil/P001).
-// Jika kode di URL sama dengan kode user yang sedang login, redirect ke /hasil.
-export default async function HasilKodePage({
-  params,
-}: {
-  params: Promise<{ kode: string }>;
-}) {
-  const { kode } = await params;
+export default async function HasilPage() {
   const cookieStore = await cookies();
-  const myKode = cookieStore.get("pariban_kode")?.value;
-  if (myKode === kode) redirect("/hasil");
+  const kode = cookieStore.get("pariban_kode")?.value;
+  if (!kode) redirect("/masuk");
 
   return (
     <Suspense

@@ -334,7 +334,7 @@ function DaftarForm() {
               <p className="text-lg font-semibold text-foreground mb-1">Foto berhasil diunggah ✓</p>
               <p className="text-sm text-muted-foreground mb-6">Profil Anda sudah lengkap dan siap ditemukan!</p>
               <Link
-                href={`/hasil/${kode}`}
+                href="/hasil"
                 className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Lihat Hasil Matching →

@@ -38,8 +38,7 @@ function OAuthCallbackInner() {
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (ok && data.kode) {
-          sessionStorage.setItem("pariban_kode", data.kode);
-          router.replace(`/hasil/${data.kode}`);
+          router.replace("/hasil");
         } else {
           // Belum terdaftar — arahkan ke form dengan email terisi
           router.replace(`/daftar?email=${encodeURIComponent(email)}`);

@@ -209,7 +209,7 @@ export default function ChatPage() {
 
       {/* Header */}
       <div className="border-b border-border bg-card/95 backdrop-blur px-4 py-3 flex items-center gap-3">
-        <Link href={`/hasil/${kode}`} className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link href="/hasil" className="text-muted-foreground hover:text-foreground transition-colors">
           ←
         </Link>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">

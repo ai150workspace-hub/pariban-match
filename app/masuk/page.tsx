@@ -80,8 +80,7 @@ export default function MasukPage() {
         localStorage.removeItem(REMEMBER_KEY);
       }
 
-      sessionStorage.setItem("pariban_kode", data.kode);
-      router.push(`/hasil/${data.kode}`);
+      router.push("/hasil");
     } catch {
       setError("Gagal menghubungi server. Periksa koneksi internetmu.");
     } finally {

@@ -95,10 +95,17 @@ export async function POST(req: Request) {
       console.error("Gagal kirim email konfirmasi:", e),
     );
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { ok: true, kode: saved.kode, inisial: saved.inisial },
       { status: 201 },
     );
+    res.cookies.set("pariban_kode", saved.kode, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 hari
+    });
+    return res;
   } catch (err) {
     return NextResponse.json(
       { error: "Gagal menyimpan data: " + String(err) },

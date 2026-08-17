@@ -52,5 +52,12 @@ export async function POST(req: Request) {
   }
   // Akun lama tanpa password: izinkan login hanya dengan email (backward compat)
 
-  return NextResponse.json({ kode: peserta.kode, inisial: peserta.inisial });
+  const res = NextResponse.json({ kode: peserta.kode, inisial: peserta.inisial });
+  res.cookies.set("pariban_kode", peserta.kode, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7, // 7 hari
+  });
+  return res;
 }

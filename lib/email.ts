@@ -129,7 +129,7 @@ export async function sendHasilMatching(
   peserta: Peserta,
   top3: MatchRingkas[],
 ): Promise<void> {
-  const hasilUrl = `${BASE_URL}/hasil/${peserta.kode}`;
+  const hasilUrl = `${BASE_URL}/hasil`;
   const adaBlur = top3.some((m) => m.skor > 90);
 
   const matchRows = top3.map((m, i) => matchRow(m, i + 1)).join("");
@@ -183,7 +183,7 @@ export async function sendKonfirmasiPremium(
   paket?: string,
   expiry?: Date,
 ): Promise<void> {
-  const hasilUrl = `${BASE_URL}/hasil/${peserta.kode}`;
+  const hasilUrl = `${BASE_URL}/hasil`;
   const namaPaket = paket ? NAMA_PAKET[paket] ?? paket : "Premium";
   const expiryStr = expiry
     ? expiry.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
