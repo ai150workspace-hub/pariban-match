@@ -173,7 +173,7 @@ export async function sendHasilMatching(
 // ── Email 3: Konfirmasi Premium ──
 
 const NAMA_PAKET: Record<string, string> = {
-  trial: "Trial 1 Bulan",
+  trial: "Promo Launch 1 Bulan",
   "3bln": "3 Bulan",
   "6bln": "6 Bulan",
 };

@@ -30,13 +30,51 @@ declare global {
 
 const PREMIUM_THRESHOLD = 90;
 
-const PAKET = [
-  { id: "trial" as const, nama: "Trial 1 Bulan", deskripsi: "Coba akses penuh selama 30 hari", harga: 79000, hemat: null },
-  { id: "3bln" as const, nama: "3 Bulan", deskripsi: "90 hari akses penuh tanpa batas", harga: 199000, hemat: "Hemat 16%" },
-  { id: "6bln" as const, nama: "6 Bulan", deskripsi: "180 hari akses penuh tanpa batas", harga: 329000, hemat: "Hemat 31%" },
-] as const;
-
 type PaketId = "trial" | "3bln" | "6bln";
+
+interface PaketInfo {
+  id: PaketId;
+  nama: string;
+  deskripsi: string;
+  harga: number;
+  hargaCoret: number | null;
+  perBulan: number | null;
+  hemat: string | null;
+  badge: string | null;
+}
+
+const PAKET: PaketInfo[] = [
+  {
+    id: "trial",
+    nama: "1 Bulan",
+    deskripsi: "Coba akses penuh selama 30 hari",
+    harga: 19900,
+    hargaCoret: null,
+    perBulan: null,
+    hemat: null,
+    badge: "Khusus 100 Pendaftar Pertama!",
+  },
+  {
+    id: "3bln",
+    nama: "3 Bulan",
+    deskripsi: "90 hari akses penuh tanpa batas",
+    harga: 47760,
+    hargaCoret: 59700,
+    perBulan: 15920,
+    hemat: "Hemat 20%",
+    badge: null,
+  },
+  {
+    id: "6bln",
+    nama: "6 Bulan",
+    deskripsi: "180 hari akses penuh tanpa batas",
+    harga: 90000,
+    hargaCoret: 119400,
+    perBulan: 15000,
+    hemat: "Hemat 25%",
+    badge: "Paling Hemat",
+  },
+];
 
 interface Rinci {
   bibit: number;
@@ -721,14 +759,39 @@ export default function HasilPage() {
                   key={pk.id}
                   onClick={() => handleUpgrade(pk.id)}
                   disabled={payLoading}
-                  className="w-full flex items-center justify-between rounded-xl border border-border bg-secondary/50 px-5 py-4 hover:border-accent/40 hover:bg-accent/5 transition-colors text-left disabled:opacity-60"
+                  className={`w-full flex items-center justify-between rounded-xl border px-5 py-4 hover:border-accent/40 hover:bg-accent/5 transition-colors text-left disabled:opacity-60 ${
+                    pk.badge === "Paling Hemat"
+                      ? "border-accent/50 bg-accent/5"
+                      : "border-border bg-secondary/50"
+                  }`}
                 >
-                  <div>
-                    <p className="font-semibold text-foreground">{pk.nama}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-foreground">{pk.nama}</p>
+                      {pk.badge && (
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold leading-tight ${
+                          pk.badge === "Paling Hemat"
+                            ? "bg-accent text-white"
+                            : "bg-primary/10 text-primary"
+                        }`}>
+                          {pk.badge}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">{pk.deskripsi}</p>
                   </div>
                   <div className="text-right ml-4 shrink-0">
+                    {pk.hargaCoret && (
+                      <p className="text-xs text-muted-foreground line-through">
+                        Rp {pk.hargaCoret.toLocaleString("id-ID")}
+                      </p>
+                    )}
                     <p className="font-bold text-primary">Rp {pk.harga.toLocaleString("id-ID")}</p>
+                    {pk.perBulan && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Rp {pk.perBulan.toLocaleString("id-ID")}/bln
+                      </p>
+                    )}
                     {pk.hemat && <p className="text-xs text-green-600 font-medium">{pk.hemat}</p>}
                   </div>
                 </button>

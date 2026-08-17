@@ -9,13 +9,13 @@ const SNAP_URL = IS_PRODUCTION
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
 const HARGA_PAKET = {
-  trial: 79000,
-  "3bln": 199000,
-  "6bln": 329000,
+  trial: 19900,
+  "3bln": 47760,
+  "6bln": 90000,
 } as const;
 
 const NAMA_PAKET = {
-  trial: "Trial 1 Bulan",
+  trial: "Promo Launch 1 Bulan",
   "3bln": "3 Bulan",
   "6bln": "6 Bulan",
 } as const;
