@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function OAuthCallback() {
+function OAuthCallbackInner() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useSearchParams();
@@ -64,5 +66,17 @@ export default function OAuthCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function OAuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <OAuthCallbackInner />
+    </Suspense>
   );
 }
