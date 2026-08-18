@@ -20,6 +20,14 @@ export const metadata: Metadata = {
   title: "PARIBAN — Pencocokan Adat Batak",
   description:
     "Platform kesiapan menikah untuk masyarakat Batak. Memeriksa kesesuaian adat sebelum mencocokkan kesiapan menikah, nilai keluarga, dan kepribadian.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/icon.png",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
