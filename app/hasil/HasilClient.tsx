@@ -14,6 +14,8 @@ const SNAP_JS = IS_PRODUCTION
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    faceapi?: any;
     snap?: {
       pay: (
         token: string,
@@ -90,6 +92,7 @@ interface Adat {
 }
 
 interface Bio {
+  catatan?: string;
   pekerjaan?: string;
   jabatan?: string;
   tinggiBadan?: number;
@@ -235,8 +238,39 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
   const [showCamera, setShowCamera] = useState(false);
   const [addError, setAddError] = useState("");
   const [adding, setAdding] = useState(false);
+  const [faceDetecting, setFaceDetecting] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const faceModelLoaded = useRef(false);
+
+  const FACE_MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model";
+
+  async function detectFaceInBlob(blob: Blob): Promise<boolean> {
+    const api = window.faceapi;
+    if (!api) return true; // Library belum dimuat — izinkan upload
+
+    try {
+      if (!faceModelLoaded.current) {
+        await api.nets.tinyFaceDetector.loadFromUri(FACE_MODEL_URL);
+        faceModelLoaded.current = true;
+      }
+      const imgUrl = URL.createObjectURL(blob);
+      try {
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("load error"));
+          img.src = imgUrl;
+        });
+        const detection = await api.detectSingleFace(img, new api.TinyFaceDetectorOptions());
+        return detection !== undefined;
+      } finally {
+        URL.revokeObjectURL(imgUrl);
+      }
+    } catch {
+      return true; // Jika deteksi gagal, izinkan upload
+    }
+  }
 
   const totalLoaded = 1 + loadedExtras.size;
 
@@ -265,6 +299,15 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
   }
 
   async function uploadPhoto(blob: Blob, isLive: boolean) {
+    setAddError("");
+    setFaceDetecting(true);
+    const hasFace = await detectFaceInBlob(blob);
+    setFaceDetecting(false);
+    if (!hasFace) {
+      setAddError("Foto tidak valid. Harap unggah foto yang memperlihatkan wajah Anda secara jelas.");
+      return;
+    }
+
     const nextIdx = totalLoaded + 1;
     const fd = new FormData();
     fd.append("foto", blob, `foto_${nextIdx}.jpg`);
@@ -272,7 +315,6 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
     fd.append("isProfile", "false");
     fd.append("isLive", isLive ? "true" : "false");
     setAdding(true);
-    setAddError("");
     try {
       const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
       if (res.ok) {
@@ -503,23 +545,31 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
         {showAdd && !showCamera && (
           <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
             <p className="text-sm font-medium text-foreground">Tambah foto baru</p>
+            <div className="rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 px-3 py-2">
+              <p className="text-xs text-orange-700 dark:text-orange-400 leading-relaxed">
+                ⚠️ Harap unggah foto asli yang memperlihatkan wajah Anda. Foto berupa logo, pemandangan, atau objek lain akan ditolak otomatis.
+              </p>
+            </div>
             <div className="flex gap-3">
-              <button type="button" onClick={startCamera}
-                className="flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors">
+              <button type="button" onClick={startCamera} disabled={faceDetecting || adding}
+                className="flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors disabled:opacity-50">
                 <span className="text-2xl">📸</span>
                 <span className="text-xs font-medium text-foreground">Foto Live</span>
                 <span className="text-[10px] text-adat-aman font-semibold">+ Badge Terverifikasi</span>
               </button>
-              <label className="flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors cursor-pointer">
+              <label className={`flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors ${faceDetecting || adding ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
                 <span className="text-2xl">🖼️</span>
                 <span className="text-xs font-medium text-foreground">Dari Galeri</span>
                 <span className="text-[10px] text-muted-foreground">JPG/PNG/WebP · 5MB</span>
-                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
+                <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" disabled={faceDetecting || adding} />
               </label>
             </div>
+            {faceDetecting && (
+              <p className="text-xs text-primary animate-pulse">🔍 Memverifikasi wajah pada foto...</p>
+            )}
             {addError && <p className="text-xs text-red-600">{addError}</p>}
             {adding && <p className="text-xs text-muted-foreground animate-pulse">Mengunggah foto...</p>}
-            <button type="button" onClick={() => setShowAdd(false)}
+            <button type="button" onClick={() => { setShowAdd(false); setAddError(""); }}
               className="text-xs text-muted-foreground hover:text-foreground">
               Batal
             </button>
@@ -794,6 +844,10 @@ export default function HasilClient({ kode }: { kode: string }) {
         data-client-key={CLIENT_KEY}
         strategy="lazyOnload"
         onLoad={() => setSnapReady(true)}
+      />
+      <Script
+        src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"
+        strategy="lazyOnload"
       />
 
       {/* Preview foto kandidat */}
@@ -1089,6 +1143,11 @@ export default function HasilClient({ kode }: { kode: string }) {
                           <p className="text-sm text-muted-foreground">
                             {m.gender === "Perempuan" ? "♀" : "♂"} {m.usia} tahun · {m.marga} · {m.kota}
                           </p>
+                          {m.bio?.catatan && (
+                            <p className="mt-1.5 text-sm text-muted-foreground italic line-clamp-2">
+                              &quot;{m.bio.catatan.length > 100 ? m.bio.catatan.slice(0, 100) + "…" : m.bio.catatan}&quot;
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-secondary">

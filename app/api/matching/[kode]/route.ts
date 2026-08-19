@@ -59,6 +59,7 @@ export async function GET(
         margaIbu: m.lawan.margaIbu,
       },
       bio: {
+        catatan: m.lawan.catatan || undefined,
         pekerjaan: m.lawan.pekerjaan,
         jabatan: m.lawan.jabatan,
         tinggiBadan: m.lawan.tinggiBadan,
