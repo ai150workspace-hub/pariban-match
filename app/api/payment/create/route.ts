@@ -9,13 +9,13 @@ const SNAP_URL = IS_PRODUCTION
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
 const HARGA_PAKET = {
-  trial: 19900,
-  "3bln": 47760,
-  "6bln": 90000,
+  "1bln": 19900,
+  "3bln": 49900,
+  "6bln": 89900,
 } as const;
 
 const NAMA_PAKET = {
-  trial: "Promo Launch 1 Bulan",
+  "1bln": "1 Bulan",
   "3bln": "3 Bulan",
   "6bln": "6 Bulan",
 } as const;
@@ -40,19 +40,19 @@ export async function POST(req: Request) {
   const { kode, paket } = body;
   if (!kode) return NextResponse.json({ error: "Kode peserta diperlukan" }, { status: 400 });
   if (!paket || !HARGA_PAKET[paket]) {
-    return NextResponse.json({ error: "Paket tidak valid (trial/3bln/6bln)" }, { status: 400 });
+    return NextResponse.json({ error: "Paket tidak valid (1bln/3bln/6bln)" }, { status: 400 });
   }
 
   const peserta = await loadPeserta();
   const target = peserta.find((p) => p.kode === kode);
   if (!target) return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
 
-  // Cek premium aktif (termasuk expiry check)
-  const masihAktif =
+  // Cek apakah sudah punya premium berbayar yang masih aktif
+  const premiumAktif =
     target.premium &&
     (!target.premiumExpiry || new Date(target.premiumExpiry) > new Date());
-  if (masihAktif) {
-    return NextResponse.json({ error: "Peserta sudah memiliki premium aktif" }, { status: 400 });
+  if (premiumAktif) {
+    return NextResponse.json({ error: "Peserta sudah memiliki premium berbayar yang aktif" }, { status: 400 });
   }
 
   const harga = HARGA_PAKET[paket];

@@ -4,6 +4,7 @@ import { inisial } from "@/lib/adat";
 import type { Peserta } from "@/lib/adat/types";
 import { sendKonfirmasiDaftar } from "@/lib/email";
 import { hashPassword } from "@/lib/hash";
+import { newTrialExpiry } from "@/lib/membership";
 
 export async function GET() {
   const list = await loadPeserta();
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
 
     const peserta: Peserta = {
       kode: "",
+      trialEndsAt: newTrialExpiry(),
       ...(passwordHash && { passwordHash }),
       nama: body.nama,
       email: body.email,

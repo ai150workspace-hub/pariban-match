@@ -96,6 +96,7 @@ export async function GET(
       fotoUrl: target.foto ? `/api/photos/${target.kode}` : null,
       fotoCount: target.fotoCount ?? 1,
       fotoLiveVerified: target.fotoLiveVerified ?? false,
+      trialEndsAt: target.trialEndsAt ?? null,
       premium: target.premium ?? false,
       premiumExpiry: target.premiumExpiry ?? null,
       premiumPaket: target.premiumPaket ?? null,

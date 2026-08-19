@@ -48,9 +48,10 @@ export interface Peserta {
   foto?: string;          // file extension: "jpg" | "png" | "webp"
   fotoCount?: number;     // jumlah foto yang diunggah
   fotoLiveVerified?: boolean; // apakah foto profil diambil langsung dari kamera
+  trialEndsAt?: string;   // ISO date, 7 hari dari registrasi — akses premium gratis selama trial
   premium?: boolean;
   premiumExpiry?: string;
-  premiumPaket?: "trial" | "3bln" | "6bln";
+  premiumPaket?: "1bln" | "3bln" | "6bln";
 
   // Bio opsional
   pekerjaan?: string;

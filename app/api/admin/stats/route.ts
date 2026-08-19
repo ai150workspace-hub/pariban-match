@@ -3,9 +3,9 @@ import { loadPeserta } from "@/lib/storage";
 import { getDaftarStarts } from "@/lib/daftar-log";
 
 const HARGA: Record<string, number> = {
-  trial: 79000,
-  "3bln": 199000,
-  "6bln": 329000,
+  "1bln": 19900,
+  "3bln": 49900,
+  "6bln": 89900,
 };
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;

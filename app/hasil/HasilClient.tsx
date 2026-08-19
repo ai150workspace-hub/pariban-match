@@ -30,7 +30,7 @@ declare global {
 
 const PREMIUM_THRESHOLD = 90;
 
-type PaketId = "trial" | "3bln" | "6bln";
+type PaketId = "1bln" | "3bln" | "6bln";
 
 interface PaketInfo {
   id: PaketId;
@@ -45,33 +45,33 @@ interface PaketInfo {
 
 const PAKET: PaketInfo[] = [
   {
-    id: "trial",
+    id: "1bln",
     nama: "1 Bulan",
-    deskripsi: "Coba akses penuh selama 30 hari",
+    deskripsi: "Akses penuh selama 30 hari",
     harga: 19900,
     hargaCoret: null,
     perBulan: null,
     hemat: null,
-    badge: "Khusus 100 Pendaftar Pertama!",
+    badge: null,
   },
   {
     id: "3bln",
     nama: "3 Bulan",
     deskripsi: "90 hari akses penuh tanpa batas",
-    harga: 47760,
+    harga: 49900,
     hargaCoret: 59700,
-    perBulan: 15920,
-    hemat: "Hemat 20%",
+    perBulan: 16633,
+    hemat: "Hemat ~16%",
     badge: null,
   },
   {
     id: "6bln",
     nama: "6 Bulan",
     deskripsi: "180 hari akses penuh tanpa batas",
-    harga: 90000,
+    harga: 89900,
     hargaCoret: 119400,
-    perBulan: 15000,
-    hemat: "Hemat 25%",
+    perBulan: 14983,
+    hemat: "Hemat ~25%",
     badge: "Paling Hemat",
   },
 ];
@@ -154,6 +154,7 @@ interface PesertaInfo {
   fotoUrl: string | null;
   fotoCount: number;
   fotoLiveVerified: boolean;
+  trialEndsAt: string | null;
   premium: boolean;
   premiumExpiry: string | null;
   premiumPaket: string | null;
@@ -764,9 +765,21 @@ export default function HasilClient({ kode }: { kode: string }) {
   }
 
   const { peserta, top3 } = data;
-  const isPremium =
-    peserta.premium &&
-    (!peserta.premiumExpiry || new Date(peserta.premiumExpiry) > new Date());
+  const now = new Date();
+
+  const isTrialActive = !!(peserta.trialEndsAt && new Date(peserta.trialEndsAt) > now);
+  const isPaidPremium =
+    !!(peserta.premium && (!peserta.premiumExpiry || new Date(peserta.premiumExpiry) > now));
+  // Full access = either trial active OR paid premium active
+  const isPremium = isTrialActive || isPaidPremium;
+
+  // Days remaining in trial
+  const trialDaysLeft = isTrialActive && peserta.trialEndsAt
+    ? Math.max(0, Math.ceil((new Date(peserta.trialEndsAt).getTime() - now.getTime()) / 86400000))
+    : 0;
+
+  // Trial just expired (has trialEndsAt but expired, no paid premium)
+  const trialExpired = !!(peserta.trialEndsAt && !isTrialActive && !isPaidPremium);
 
   const expiryLabel = peserta.premiumExpiry
     ? new Date(peserta.premiumExpiry).toLocaleDateString("id-ID", {
@@ -803,14 +816,28 @@ export default function HasilClient({ kode }: { kode: string }) {
         </div>
       )}
 
-      {/* Paket Modal */}
+      {/* Paket / Paywall Modal */}
       {showPaketModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
-            <h3 className="font-heading text-xl font-bold text-foreground">Pilih Paket Premium</h3>
-            <p className="mt-1 text-sm text-muted-foreground mb-5">Akses penuh semua hasil matching tanpa batas</p>
+            {trialExpired ? (
+              <>
+                <div className="mb-5 text-center">
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 text-3xl">⏰</div>
+                  <h3 className="font-heading text-xl font-bold text-foreground">Trial Gratis Telah Berakhir</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Masa trial 7 hari kamu sudah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur PARIBAN Premium.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="font-heading text-xl font-bold text-foreground">Pilih Paket Premium</h3>
+                <p className="mt-1 text-sm text-muted-foreground mb-5">Akses penuh semua hasil matching tanpa batas</p>
+              </>
+            )}
 
-            <div className="space-y-3">
+            <div className={`space-y-3 ${trialExpired ? "" : "mt-0"}`}>
               {PAKET.map((pk) => (
                 <button
                   key={pk.id}
@@ -899,7 +926,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                 {peserta.usia} tahun · {peserta.marga} · {peserta.kota}
               </p>
             </div>
-            {isPremium && (
+            {isPaidPremium && (
               <div className="text-right">
                 <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold text-accent border border-accent/30">
                   ★ PREMIUM
@@ -909,11 +936,76 @@ export default function HasilClient({ kode }: { kode: string }) {
                 )}
               </div>
             )}
+            {isTrialActive && (
+              <div className="text-right">
+                <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary border border-primary/30">
+                  ✦ TRIAL GRATIS
+                </span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {trialDaysLeft === 0 ? "Berakhir hari ini" : `Tersisa ${trialDaysLeft} hari`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Banner upgrade */}
-        {!isPremium && top3.some((m) => m.skor > PREMIUM_THRESHOLD) && (
+        {/* Banner trial aktif */}
+        {isTrialActive && (
+          <div className={`mb-6 rounded-xl border p-4 flex items-center gap-4 ${
+            trialDaysLeft <= 2
+              ? "border-orange-300 bg-orange-50/50 dark:bg-orange-900/10"
+              : "border-primary/20 bg-primary/5"
+          }`}>
+            <span className="text-2xl shrink-0">{trialDaysLeft <= 2 ? "⏰" : "✦"}</span>
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${trialDaysLeft <= 2 ? "text-orange-700 dark:text-orange-400" : "text-primary"}`}>
+                {trialDaysLeft <= 2
+                  ? `Trial gratis berakhir dalam ${trialDaysLeft === 0 ? "kurang dari 24 jam" : `${trialDaysLeft} hari`}!`
+                  : `Trial Premium — tersisa ${trialDaysLeft} hari`}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {trialDaysLeft <= 2
+                  ? "Berlangganan sekarang agar akses tidak terputus."
+                  : "Kamu menikmati akses penuh selama periode trial. Berlangganan agar tidak terputus."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPaketModal(true)}
+              className={`shrink-0 inline-flex h-9 items-center rounded-lg px-4 text-xs font-semibold text-white transition-colors ${
+                trialDaysLeft <= 2 ? "bg-orange-500 hover:bg-orange-600" : "bg-primary hover:bg-primary/90"
+              }`}
+            >
+              Berlangganan
+            </button>
+          </div>
+        )}
+
+        {/* Banner trial expired — paywall */}
+        {trialExpired && (
+          <div className="mb-6 rounded-xl border border-orange-300 bg-orange-50/50 dark:bg-orange-900/10 p-5">
+            <div className="flex items-start gap-4">
+              <span className="text-2xl">⏰</span>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">Masa Trial Gratis Kamu Sudah Berakhir</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Trial 7 hari telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
+                </p>
+                {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
+                <button
+                  type="button"
+                  onClick={() => setShowPaketModal(true)}
+                  className="mt-3 inline-flex h-9 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+                >
+                  Pilih Paket Berlangganan
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Banner upgrade untuk non-trial user */}
+        {!isPremium && !trialExpired && !isTrialActive && top3.some((m) => m.skor > PREMIUM_THRESHOLD) && (
           <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
             <div className="flex items-start gap-4">
               <span className="text-2xl">🔒</span>
@@ -1041,7 +1133,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                         <div>
                           <p className="text-sm font-semibold text-foreground">♥ Kamu dan {m.nama} saling cocok!</p>
                           <p className="text-xs text-muted-foreground">
-                            {isPremium ? "Mulai percakapan sekarang" : "Upgrade Premium untuk mulai chat"}
+                            {isPremium ? "Mulai percakapan sekarang" : "Berlangganan untuk mulai chat"}
                           </p>
                         </div>
                         {isPremium ? (
@@ -1059,7 +1151,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                             onClick={() => setShowPaketModal(true)}
                             className="shrink-0 inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
                           >
-                            🔓 Upgrade Premium
+                            🔓 Pilih Paket
                           </button>
                         )}
                       </div>

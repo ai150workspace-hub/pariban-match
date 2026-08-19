@@ -6,7 +6,7 @@ import { sendKonfirmasiPremium } from "@/lib/email";
 const SERVER_KEY = process.env.MIDTRANS_SERVER_KEY ?? "";
 
 const DURASI_HARI: Record<string, number> = {
-  trial: 30,
+  "1bln": 30,
   "3bln": 90,
   "6bln": 180,
 };
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     await updatePeserta(kode, {
       premium: true,
       premiumExpiry: expiryISO,
-      premiumPaket: paket as "trial" | "3bln" | "6bln",
+      premiumPaket: paket as "1bln" | "3bln" | "6bln",
     });
     console.log(`Premium aktif untuk ${kode} via ${paket}, expiry: ${expiryISO}`);
   } catch (e) {

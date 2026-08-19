@@ -40,6 +40,7 @@ type DbRow = {
   introvert: number; boleh_hubung: string; catatan: string;
   inisial: string; status_data: string;
   foto: string | null; premium: boolean; password_hash: string | null;
+  trial_ends_at: string | null;
   premium_expiry: string | null; premium_paket: string | null;
   pekerjaan: string | null; jabatan: string | null;
   tinggi_badan: number | null; berat_badan: string | null;
@@ -66,8 +67,9 @@ function dbToTs(r: DbRow): Peserta {
     inisial: r.inisial, statusData: r.status_data,
     foto: r.foto ?? undefined, premium: r.premium,
     passwordHash: r.password_hash ?? undefined,
+    trialEndsAt: r.trial_ends_at ?? undefined,
     premiumExpiry: r.premium_expiry ?? undefined,
-    premiumPaket: (r.premium_paket as "trial" | "3bln" | "6bln") ?? undefined,
+    premiumPaket: (r.premium_paket as "1bln" | "3bln" | "6bln") ?? undefined,
     pekerjaan: r.pekerjaan ?? undefined,
     jabatan: r.jabatan ?? undefined,
     tinggiBadan: r.tinggi_badan ?? undefined,
@@ -94,6 +96,7 @@ function tsToDb(p: Peserta): Record<string, unknown> {
     catatan: p.catatan, inisial: p.inisial, status_data: p.statusData,
     ...(p.foto !== undefined && { foto: p.foto }),
     ...(p.passwordHash !== undefined && { password_hash: p.passwordHash }),
+    ...(p.trialEndsAt !== undefined && { trial_ends_at: p.trialEndsAt }),
     premium: p.premium ?? false,
     ...(p.premiumExpiry !== undefined && { premium_expiry: p.premiumExpiry }),
     ...(p.premiumPaket !== undefined && { premium_paket: p.premiumPaket }),
@@ -114,6 +117,7 @@ function partialToDb(updates: Partial<Peserta>): Record<string, unknown> {
     wa: "wa", kota: "kota", inisial: "inisial", statusData: "status_data",
     tahunLahir: "tahun_lahir", agama: "agama", cariAgama: "cari_agama",
     suku: "suku", marga: "marga", margaIbu: "marga_ibu",
+    trialEndsAt: "trial_ends_at",
     premiumExpiry: "premium_expiry", premiumPaket: "premium_paket",
     pekerjaan: "pekerjaan", jabatan: "jabatan",
     tinggiBadan: "tinggi_badan", beratBadan: "berat_badan", minat: "minat",
