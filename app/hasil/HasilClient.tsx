@@ -447,6 +447,48 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
                 ★ Jadikan Foto Profil
               </button>
             )}
+            <label className="cursor-pointer rounded-lg border border-border bg-secondary/50 px-3 py-1.5 text-xs text-foreground hover:bg-secondary transition-colors">
+              🔄 Ganti
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file || file.size > 5 * 1024 * 1024) { setAddError("Ukuran maksimal 5MB"); return; }
+                  const isProf = selectedIdx === 0;
+                  const fd = new FormData();
+                  fd.append("foto", file, `foto_replace.jpg`);
+                  fd.append("index", String(selectedIdx === 0 ? 1 : selectedIdx));
+                  fd.append("isProfile", isProf ? "true" : "false");
+                  fd.append("isLive", "false");
+                  setAdding(true);
+                  const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
+                  setAdding(false);
+                  if (res.ok) { setRefreshKey((k) => k + 1); setSelectedIdx(null); }
+                  else { const r = await res.json().catch(() => ({})); setAddError(r.error || "Gagal mengganti foto"); }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirm("Hapus foto ini?")) return;
+                const idxParam = selectedIdx === 0 ? "" : `?index=${selectedIdx}`;
+                const res = await fetch(`/api/photos/${kode}${idxParam}`, { method: "DELETE" });
+                if (res.ok) {
+                  if (selectedIdx !== 0) markFailed(selectedIdx);
+                  setRefreshKey((k) => k + 1);
+                  setSelectedIdx(null);
+                } else {
+                  setAddError("Gagal menghapus foto");
+                }
+              }}
+              className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 transition-colors dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400"
+            >
+              🗑️ Hapus
+            </button>
             {selectedIdx === 0 && (
               <span className="text-xs text-muted-foreground py-1">Ini foto profil utama yang dilihat kandidat lain</span>
             )}
@@ -540,8 +582,8 @@ function ProfilLengkapSaya({ p }: { p: PesertaInfo }) {
   );
 }
 
-function ProfilMatchDetail({ profil, isPremium }: { profil?: ProfilMatch; isPremium: boolean }) {
-  if (!profil || !isPremium) return null;
+function ProfilMatchDetail({ profil }: { profil?: ProfilMatch }) {
+  if (!profil) return null;
   return (
     <div className="border-t border-border px-6 py-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Detail Profil</p>
@@ -614,6 +656,7 @@ export default function HasilClient({ kode }: { kode: string }) {
   const [showPaketModal, setShowPaketModal] = useState(false);
   const [chatLoading, setChatLoading] = useState<string | null>(null);
   const [chatError, setChatError] = useState("");
+  const [candidatePhotoPreview, setCandidatePhotoPreview] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -739,6 +782,26 @@ export default function HasilClient({ kode }: { kode: string }) {
         strategy="lazyOnload"
         onLoad={() => setSnapReady(true)}
       />
+
+      {/* Preview foto kandidat */}
+      {candidatePhotoPreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setCandidatePhotoPreview(null)}
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/20 text-white flex items-center justify-center text-xl hover:bg-white/30"
+            onClick={() => setCandidatePhotoPreview(null)}
+          >✕</button>
+          <img
+            src={candidatePhotoPreview}
+            alt="Preview"
+            className="max-h-[85vh] max-w-full rounded-2xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* Paket Modal */}
       {showPaketModal && (
@@ -903,7 +966,6 @@ export default function HasilClient({ kode }: { kode: string }) {
         ) : (
           <div className="space-y-6">
             {top3.map((m, i) => {
-              const isBlurred = !isPremium && m.skor > PREMIUM_THRESHOLD;
               return (
                 <div
                   key={i}
@@ -911,10 +973,17 @@ export default function HasilClient({ kode }: { kode: string }) {
                     m.saling ? "border-accent/40" : "border-border"
                   }`}
                 >
-                  <div className={isBlurred ? "blur-sm select-none pointer-events-none" : ""}>
+                  <div>
                     <div className="flex items-start justify-between p-6 pb-0">
                       <div className="flex items-start gap-4">
-                        <Avatar fotoUrl={m.fotoUrl} inisial={m.nama} size="md" />
+                        <button
+                          type="button"
+                          onClick={() => m.fotoUrl && setCandidatePhotoPreview(m.fotoUrl)}
+                          className={m.fotoUrl ? "cursor-zoom-in" : "cursor-default"}
+                          title={m.fotoUrl ? "Klik untuk perbesar foto" : undefined}
+                        >
+                          <Avatar fotoUrl={m.fotoUrl} inisial={m.nama} size="md" />
+                        </button>
                         <div>
                           <div className="flex items-center gap-3">
                             <span className="text-xs text-muted-foreground">Peringkat {i + 1}</span>
@@ -942,7 +1011,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                       </p>
                     </div>
 
-                    <ProfilMatchDetail profil={m.profil} isPremium={isPremium} />
+                    <ProfilMatchDetail profil={m.profil} />
                     <BioSection bio={m.bio} />
 
                     <div className="border-t border-border px-6 py-5">
@@ -997,26 +1066,6 @@ export default function HasilClient({ kode }: { kode: string }) {
                     )}
                   </div>
 
-                  {isBlurred && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/70 backdrop-blur-[2px]">
-                      <div className="rounded-2xl bg-card border border-accent/30 p-6 text-center shadow-lg max-w-xs mx-4">
-                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-2xl">
-                          🔒
-                        </div>
-                        <p className="font-semibold text-foreground">Skor di atas 90</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          Kandidat ini sangat cocok untukmu. Pilih paket Premium untuk melihat detailnya.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setShowPaketModal(true)}
-                          className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg bg-accent text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
-                        >
-                          Lihat Paket
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}

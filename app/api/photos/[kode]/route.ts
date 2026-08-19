@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readFile, writeFile, mkdir } from "fs/promises";
+import { readFile, writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 import { updatePeserta } from "@/lib/storage";
@@ -112,4 +112,41 @@ export async function POST(
   } catch {}
 
   return NextResponse.json({ ok: true, storageKey });
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ kode: string }> },
+) {
+  const { kode } = await params;
+  const url = new URL(req.url);
+  const index = url.searchParams.get("index");
+  const prefix = index ? `${kode}_${index}` : kode;
+
+  if (USE_SUPABASE) {
+    const { getSupabase } = await import("@/lib/supabase");
+    const sb = getSupabase();
+    for (const ext of ["jpg", "jpeg", "png", "webp"]) {
+      await sb.storage.from(BUCKET).remove([`${prefix}.${ext}`]).catch(() => {});
+    }
+    if (!index) {
+      await updatePeserta(kode, { foto: null as unknown as string }).catch(() => {});
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  let deleted = false;
+  for (const ext of ["jpg", "jpeg", "png", "webp"]) {
+    const filePath = join(PHOTOS_DIR, `${prefix}.${ext}`);
+    if (existsSync(filePath)) {
+      await unlink(filePath).catch(() => {});
+      deleted = true;
+    }
+  }
+
+  if (!index && deleted) {
+    await updatePeserta(kode, { foto: null as unknown as string }).catch(() => {});
+  }
+
+  return NextResponse.json({ ok: true, deleted });
 }

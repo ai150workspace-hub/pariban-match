@@ -40,8 +40,11 @@ function OAuthCallbackInner() {
         if (ok && data.kode) {
           router.replace("/hasil");
         } else {
-          // Belum terdaftar — arahkan ke form dengan email terisi
-          router.replace(`/daftar?email=${encodeURIComponent(email)}`);
+          // Belum terdaftar — arahkan ke halaman persetujuan dulu
+          const nama = session?.user?.name ?? "";
+          const q = new URLSearchParams({ email });
+          if (nama) q.set("nama", nama);
+          router.replace(`/persetujuan?${q.toString()}`);
         }
       })
       .catch(() => {
