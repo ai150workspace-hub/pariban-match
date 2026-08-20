@@ -182,7 +182,7 @@ function DemografiWidget({ d }: { d: Demografi }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Rasio Gender</h3>
+        <h3 className="mb-4 text-sm font-bold text-foreground">Rasio Gender</h3>
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl font-bold text-primary">{d.genderRatio.pria}</span>
           <span className="text-sm text-muted-foreground">Pria</span>
@@ -200,7 +200,7 @@ function DemografiWidget({ d }: { d: Demografi }) {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Distribusi Usia</h3>
+        <h3 className="mb-4 text-sm font-bold text-foreground">Distribusi Usia</h3>
         <div className="space-y-2.5">
           {Object.entries(d.usiaDist).map(([range, count]) => (
             <MiniBar key={range} label={range + " thn"} count={count} max={maxUsia} color="bg-accent" />
@@ -209,7 +209,7 @@ function DemografiWidget({ d }: { d: Demografi }) {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Top Status Kerja</h3>
+        <h3 className="mb-4 text-sm font-bold text-foreground">Top Status Kerja</h3>
         <div className="space-y-2.5">
           {d.topPekerjaan.map((item) => (
             <MiniBar key={item.label} label={item.label} count={item.count} max={maxKerja} color="bg-primary" />
@@ -219,7 +219,7 @@ function DemografiWidget({ d }: { d: Demografi }) {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-5">
-        <h3 className="mb-4 text-sm font-semibold text-foreground">Distribusi Pendidikan</h3>
+        <h3 className="mb-4 text-sm font-bold text-foreground">Distribusi Pendidikan</h3>
         <div className="space-y-2.5">
           {d.topPendidikan.map((item) => (
             <MiniBar key={item.label} label={item.label} count={item.count} max={maxDidik} color="bg-primary/70" />
@@ -265,7 +265,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <p className="text-xl font-bold tracking-[0.15em] text-primary mb-1">PARIBAN</p>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Admin</h1>
+          <h1 className="font-heading text-2xl font-bold leading-tight text-foreground">Admin</h1>
           <p className="mt-1 text-sm text-muted-foreground">Masukkan password untuk melanjutkan</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -508,7 +508,7 @@ export default function AdminPage() {
 
             {/* Registration Funnel */}
             <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">Registrasi</h3>
+              <h3 className="mb-4 text-sm font-bold text-foreground">Registrasi</h3>
               <div className="flex flex-col gap-2">
                 {[
                   { label: "Mulai Daftar", count: daftarMulai > 0 ? daftarMulai : "Belum tersedia", top: daftarMulai || undefined },
@@ -548,7 +548,7 @@ export default function AdminPage() {
 
             {/* Payment Funnel */}
             <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-4 text-sm font-semibold text-foreground">Konversi Premium</h3>
+              <h3 className="mb-4 text-sm font-bold text-foreground">Konversi Premium</h3>
               <div className="flex flex-col gap-2">
                 {[
                   { label: "Total Pengguna", count: totalUser },

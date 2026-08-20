@@ -118,7 +118,7 @@ export default function MasukPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <span className="text-3xl">♥</span>
             </div>
-            <h1 className="font-heading text-3xl font-bold text-foreground">Masuk ke PARIBAN</h1>
+            <h1 className="font-heading text-3xl font-bold leading-tight text-foreground">Masuk ke PARIBAN</h1>
             <p className="mt-2 text-sm text-muted-foreground">Lihat hasil matching dan profil Anda</p>
           </div>
 

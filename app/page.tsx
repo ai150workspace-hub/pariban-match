@@ -109,10 +109,10 @@ export default function Home() {
               <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
                 Cara Kerja
               </p>
-              <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
+              <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
                 Tiga Langkah Sederhana
               </h2>
-              <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+              <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground">
                 Proses yang dirancang agar mudah dan menghormati nilai-nilai adat
                 Batak
               </p>
@@ -127,7 +127,7 @@ export default function Home() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-white">
                     {s.num}
                   </div>
-                  <h3 className="mt-5 text-xl font-semibold text-foreground">
+                  <h3 className="mt-5 text-xl font-bold text-foreground">
                     {s.title}
                   </h3>
                   <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -146,7 +146,7 @@ export default function Home() {
               <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
                 Sistem Penilaian
               </p>
-              <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
+              <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
                 Empat Pilar Penilaian
               </h2>
             </div>
@@ -159,7 +159,7 @@ export default function Home() {
                 >
                   <div className={`mb-4 h-1 w-16 rounded-full ${p.bar}`} />
                   <p className={`text-5xl font-bold ${p.color}`}>{p.score}</p>
-                  <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  <h3 className="mt-4 text-lg font-bold text-foreground">
                     {p.name}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
@@ -178,10 +178,10 @@ export default function Home() {
               <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
                 Gerbang Adat
               </p>
-              <h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
+              <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
                 Empat Status Kesesuaian
               </h2>
-              <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
+              <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground">
                 Setiap pasangan diperiksa melalui 22 aturan adat Batak dan
                 mendapat salah satu status berikut
               </p>
@@ -215,7 +215,7 @@ export default function Home() {
                   className="flex flex-col items-center rounded-2xl border border-border bg-secondary/30 p-8 text-center"
                 >
                   <StatusAdatBadge status={item.status} />
-                  <h3 className="mt-4 text-lg font-semibold text-foreground">
+                  <h3 className="mt-4 text-lg font-bold text-foreground">
                     {item.title}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

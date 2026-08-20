@@ -589,7 +589,7 @@ function ProfilLengkapSaya({ p }: { p: PesertaInfo }) {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-6 py-4 text-left hover:bg-secondary/30 transition-colors"
       >
-        <span className="font-semibold text-foreground">Profil Lengkap Saya</span>
+        <span className="font-bold text-foreground">Profil Lengkap Saya</span>
         <span className="text-muted-foreground text-lg">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
@@ -972,10 +972,10 @@ export default function HasilClient({ kode }: { kode: string }) {
           <div className="flex items-center gap-5">
             <Avatar fotoUrl={peserta.fotoUrl} inisial={peserta.inisial} size="lg" />
             <div className="flex-1">
-              <h1 className="mt-1 font-heading text-3xl font-bold text-foreground">
+              <h1 className="mt-1 font-heading text-3xl font-bold leading-tight text-foreground">
                 {peserta.inisial}
               </h1>
-              <p className="mt-1 text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {peserta.gender === "Perempuan" ? "♀" : "♂"} {peserta.gender} ·{" "}
                 {peserta.usia} tahun · {peserta.marga} · {peserta.kota}
               </p>
@@ -1092,9 +1092,12 @@ export default function HasilClient({ kode }: { kode: string }) {
         <ProfilLengkapSaya p={peserta} />
 
         {/* Heading */}
-        <h2 className="mb-6 font-heading text-2xl font-bold text-foreground">
-          Top 3 Kecocokan
-        </h2>
+        <div className="mb-6">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-accent">Hasil Pencocokan</p>
+          <h2 className="font-heading text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+            Top 3 Kecocokan
+          </h2>
+        </div>
 
         {chatError && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-400">
@@ -1104,7 +1107,7 @@ export default function HasilClient({ kode }: { kode: string }) {
 
         {top3.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-12 text-center">
-            <p className="text-lg font-semibold text-foreground">Belum ada kandidat yang cocok</p>
+            <p className="text-lg font-bold text-foreground">Belum ada kandidat yang cocok</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Sistem pencocokan berjalan otomatis — hasil muncul segera setelah ada peserta lain yang memenuhi kriteria agama, usia, dan adat.
             </p>
@@ -1132,14 +1135,14 @@ export default function HasilClient({ kode }: { kode: string }) {
                         </button>
                         <div>
                           <div className="flex items-center gap-3">
-                            <span className="text-xs text-muted-foreground">Peringkat {i + 1}</span>
+                            <span className="text-xs font-medium text-muted-foreground">Peringkat {i + 1}</span>
                             {m.saling && (
-                              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-semibold text-accent">
+                              <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-[11px] font-bold text-accent">
                                 SALING COCOK ♥
                               </span>
                             )}
                           </div>
-                          <h3 className="mt-1 text-xl font-semibold text-foreground">{m.nama}</h3>
+                          <h3 className="mt-1 text-xl font-bold text-foreground">{m.nama}</h3>
                           <p className="text-sm text-muted-foreground">
                             {m.gender === "Perempuan" ? "♀" : "♂"} {m.usia} tahun · {m.marga} · {m.kota}
                           </p>
@@ -1190,8 +1193,8 @@ export default function HasilClient({ kode }: { kode: string }) {
                     {m.saling && (
                       <div className="border-t border-accent/20 bg-accent/5 px-6 py-4 flex items-center justify-between gap-4">
                         <div>
-                          <p className="text-sm font-semibold text-foreground">♥ Kamu dan {m.nama} saling cocok!</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm font-bold text-foreground">♥ Kamu dan {m.nama} saling cocok!</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             {isPremium ? "Mulai percakapan sekarang" : "Berlangganan untuk mulai chat"}
                           </p>
                         </div>
