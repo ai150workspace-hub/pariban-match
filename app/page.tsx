@@ -57,10 +57,10 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
         {/* ── Hero Section ── */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-primary via-[#5A1720] to-[#331014] text-white">
+        <section className="relative overflow-hidden bg-gradient-to-b from-brand-maroon via-[#3A1119] to-[#1A1A1A] text-white">
           <div className="mx-auto flex max-w-3xl flex-col items-center px-6 pb-20 pt-28 text-center sm:pt-36">
-            <div className="mb-6 h-1 w-24 rounded-full bg-accent" />
-            <p className="mb-4 text-sm font-semibold tracking-[0.2em] uppercase text-accent">
+            <div className="mb-6 h-1 w-24 rounded-full bg-brand-cream" />
+            <p className="mb-4 text-sm font-semibold tracking-[0.2em] uppercase text-brand-cream">
               Pencocokan Adat Batak
             </p>
             <h1 className="font-heading text-6xl font-bold tracking-[0.04em] sm:text-8xl">
@@ -73,13 +73,13 @@ export default function Home() {
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link
                 href="/daftar"
-                className="inline-flex h-12 items-center rounded-xl bg-accent px-10 text-lg font-semibold text-white hover:bg-accent/90 transition-colors"
+                className="inline-flex h-12 items-center rounded-xl bg-brand-maroon px-10 text-lg font-semibold text-white hover:bg-brand-red transition-colors"
               >
                 Daftar Sekarang
               </Link>
               <Link
                 href="/masuk"
-                className="inline-flex h-12 items-center rounded-xl border border-primary/30 bg-card px-8 text-base font-semibold text-primary hover:bg-primary/5 transition-colors"
+                className="inline-flex h-12 items-center rounded-xl border border-brand-maroon/30 bg-card px-8 text-base font-semibold text-brand-maroon hover:bg-brand-maroon/5 transition-colors"
               >
                 Sudah Daftar? Lihat Hasil →
               </Link>
@@ -92,7 +92,7 @@ export default function Home() {
                 ["22", "Aturan Adat"],
               ].map(([num, label]) => (
                 <div key={label} className="text-center">
-                  <p className="text-3xl font-bold text-accent sm:text-4xl">
+                  <p className="text-3xl font-bold text-brand-cream sm:text-4xl">
                     {num}
                   </p>
                   <p className="mt-1 text-sm text-white/60">{label}</p>
