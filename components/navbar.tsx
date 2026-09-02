@@ -6,7 +6,7 @@ export function Navbar() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link
           href="/"
-          className="text-xl font-bold tracking-[0.15em] text-primary"
+          className="text-xl font-bold tracking-[0.15em] text-brand-maroon"
         >
           PARIBAN
         </Link>
@@ -25,7 +25,7 @@ export function Navbar() {
           </Link>
           <Link
             href="/daftar"
-            className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="inline-flex h-9 items-center rounded-lg bg-brand-maroon px-4 text-sm font-semibold text-primary-foreground hover:bg-brand-maroon/90 transition-colors"
           >
             Daftar
           </Link>

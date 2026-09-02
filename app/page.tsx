@@ -228,8 +228,8 @@ export default function Home() {
         </section>
 
         {/* ── Footer ── */}
-        <footer className="bg-foreground py-12 text-center">
-          <p className="text-2xl font-bold tracking-[0.15em] text-accent">
+        <footer className="bg-brand-maroon py-12 text-center">
+          <p className="text-2xl font-bold tracking-[0.15em] text-brand-cream">
             PARIBAN
           </p>
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/50">
@@ -237,7 +237,7 @@ export default function Home() {
             <br />
             Dibuat dengan menghormati adat dan budaya Batak.
           </p>
-          <p className="mt-6 text-xs text-white/35">
+          <p className="mt-6 text-xs text-white/55">
             &copy; 2026 PARIBAN. Hak cipta dilindungi.
           </p>
         </footer>
