@@ -56,6 +56,26 @@
   --color-adat-cek-fg: var(--adat-cek-fg);
   --color-adat-pariban: var(--adat-pariban);
   --color-adat-pariban-fg: var(--adat-pariban-fg);
+
+  /* Brand palette (Ulos-inspired) — dipakai landing page saja */
+  --color-brand-maroon: var(--brand-maroon);
+  --color-brand-red: var(--brand-red);
+  --color-brand-cream: var(--brand-cream);
+  --color-ink: var(--ink);
+
+  /* Status gerbang adat — token independen dari palet brand */
+  --color-status-marpariban: var(--status-marpariban);
+  --color-status-marpariban-bg: var(--status-marpariban-bg);
+  --color-status-marpariban-fg: var(--status-marpariban-fg);
+  --color-status-sesuai: var(--status-sesuai);
+  --color-status-sesuai-bg: var(--status-sesuai-bg);
+  --color-status-sesuai-fg: var(--status-sesuai-fg);
+  --color-status-cek: var(--status-cek);
+  --color-status-cek-bg: var(--status-cek-bg);
+  --color-status-cek-fg: var(--status-cek-fg);
+  --color-status-blokir: var(--status-blokir);
+  --color-status-blokir-bg: var(--status-blokir-bg);
+  --color-status-blokir-fg: var(--status-blokir-fg);
 }
 
 /*
@@ -130,6 +150,29 @@
   --adat-cek-fg: #B07D2A;
   --adat-pariban: #F7EFDC;
   --adat-pariban-fg: #9A7B31;
+
+  /* ── Brand palette (Ulos-inspired: merah-putih-hitam) — landing only ── */
+  --brand-maroon: #4B1620;
+  --brand-red: #C1272D;
+  --brand-cream: #F5F1E8;
+  --ink: #1A1A1A;
+
+  /* ── Status gerbang adat (independen dari palet brand) ── */
+  --status-marpariban: #A67C00;
+  --status-marpariban-bg: #F7EFDC;
+  --status-marpariban-fg: #1A1A1A;
+
+  --status-sesuai: #2D6A4F;
+  --status-sesuai-bg: #E4EFE9;
+  --status-sesuai-fg: #2D6A4F;
+
+  --status-cek: #64748B;
+  --status-cek-bg: #EAEDF1;
+  --status-cek-fg: #3B4552;
+
+  --status-blokir: #8B1E1E;
+  --status-blokir-bg: #FBEAEA;
+  --status-blokir-fg: #7A1414;
 }
 
 .dark {
