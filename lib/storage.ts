@@ -162,6 +162,12 @@ async function sbNextKode(): Promise<string> {
   return `P${String((count ?? 0) + 1).padStart(3, "0")}`;
 }
 
+async function sbDelete(kode: string): Promise<void> {
+  const { getSupabase } = await import("./supabase");
+  const { error } = await getSupabase().from("peserta").delete().eq("kode", kode);
+  if (error) throw new Error(error.message);
+}
+
 // ── Public API ────────────────────────────────────────────────────
 
 export async function loadPeserta(): Promise<Peserta[]> {
@@ -197,4 +203,15 @@ export async function updatePeserta(kode: string, updates: Partial<Peserta>): Pr
   if (idx === -1) throw new Error("Peserta tidak ditemukan");
   list[idx] = { ...list[idx], ...updates };
   await fileSave(list);
+}
+
+export async function deletePeserta(kode: string): Promise<void> {
+  if (USE_SUPABASE) {
+    await sbDelete(kode);
+    return;
+  }
+  const list = await fileLoad();
+  const next = list.filter((p) => p.kode !== kode);
+  if (next.length === list.length) throw new Error("Peserta tidak ditemukan");
+  await fileSave(next);
 }

@@ -708,6 +708,10 @@ export default function HasilClient({ kode }: { kode: string }) {
   const [chatLoading, setChatLoading] = useState<string | null>(null);
   const [chatError, setChatError] = useState("");
   const [candidatePhotoPreview, setCandidatePhotoPreview] = useState<string | null>(null);
+  const [showHapusModal, setShowHapusModal] = useState(false);
+  const [hapusKonfirmasi, setHapusKonfirmasi] = useState("");
+  const [hapusLoading, setHapusLoading] = useState(false);
+  const [hapusError, setHapusError] = useState("");
 
   const loadData = useCallback(async () => {
     try {
@@ -791,6 +795,25 @@ export default function HasilClient({ kode }: { kode: string }) {
   async function handleKeluar() {
     await fetch("/api/keluar", { method: "POST" });
     router.push("/masuk");
+  }
+
+  async function handleHapusAkun() {
+    if (hapusKonfirmasi.trim().toUpperCase() !== "HAPUS") return;
+    setHapusLoading(true);
+    setHapusError("");
+    try {
+      const res = await fetch(`/api/peserta/${kode}`, { method: "DELETE" });
+      if (!res.ok) {
+        const result = await res.json().catch(() => ({}));
+        setHapusError(result.error || "Gagal menghapus akun. Coba lagi.");
+        return;
+      }
+      router.push("/");
+    } catch {
+      setHapusError("Gagal menghubungi server. Periksa koneksi Anda.");
+    } finally {
+      setHapusLoading(false);
+    }
   }
 
   if (loading) {
@@ -944,6 +967,57 @@ export default function HasilClient({ kode }: { kode: string }) {
             >
               Batal
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Hapus Akun */}
+      {showHapusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="mb-4 text-center">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 text-3xl">⚠️</div>
+              <h3 className="font-heading text-xl font-bold text-foreground">Hapus Akun?</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Tindakan ini <strong>tidak bisa dibatalkan</strong>. Semua data profil, foto,
+                dan riwayat chat kamu akan dihapus permanen dari PARIBAN.
+              </p>
+            </div>
+
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Ketik <strong>HAPUS</strong> untuk konfirmasi
+            </label>
+            <input
+              type="text"
+              value={hapusKonfirmasi}
+              onChange={(e) => setHapusKonfirmasi(e.target.value)}
+              placeholder="HAPUS"
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-400/30"
+            />
+
+            {hapusError && <p className="mt-3 text-sm text-red-600">{hapusError}</p>}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHapusModal(false);
+                  setHapusKonfirmasi("");
+                  setHapusError("");
+                }}
+                className="flex-1 inline-flex h-11 items-center justify-center rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-secondary transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleHapusAkun}
+                disabled={hapusKonfirmasi.trim().toUpperCase() !== "HAPUS" || hapusLoading}
+                className="flex-1 inline-flex h-11 items-center justify-center rounded-lg bg-red-600 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {hapusLoading ? "Menghapus..." : "Hapus Akun Saya"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1231,6 +1305,16 @@ export default function HasilClient({ kode }: { kode: string }) {
             Status &quot;Perlu Dicek&quot; bukan larangan — artinya perlu dipastikan ke
             keluarga. Hubungi kami jika ada pertanyaan.
           </p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setShowHapusModal(true)}
+            className="text-xs text-muted-foreground hover:text-red-600 transition-colors underline underline-offset-2"
+          >
+            Hapus akun saya secara permanen
+          </button>
         </div>
       </div>
     </div>
