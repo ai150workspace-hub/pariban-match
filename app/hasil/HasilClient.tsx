@@ -880,7 +880,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 text-3xl">⏰</div>
                   <h3 className="font-heading text-xl font-bold text-foreground">Trial Gratis Telah Berakhir</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Masa trial 7 hari kamu sudah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur PARIBAN Premium.
+                    Masa trial 1 bulan kamu sudah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur PARIBAN Premium.
                   </p>
                 </div>
               </>
@@ -1043,7 +1043,7 @@ export default function HasilClient({ kode }: { kode: string }) {
               <div className="flex-1">
                 <p className="font-semibold text-foreground">Masa Trial Gratis Kamu Sudah Berakhir</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Trial 7 hari telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
+                  Trial 1 bulan telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
                 </p>
                 {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
                 <button

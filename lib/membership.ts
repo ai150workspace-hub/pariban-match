@@ -29,9 +29,9 @@ export function getTrialDaysLeft(p: Pick<Peserta, "trialEndsAt">): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-/** ISO string for 7 days from now — use when creating a new peserta. */
+/** ISO string for 30 days (1 bulan) from now — use when creating a new peserta. */
 export function newTrialExpiry(): string {
   const d = new Date();
-  d.setDate(d.getDate() + 7);
+  d.setDate(d.getDate() + 30);
   return d.toISOString();
 }
