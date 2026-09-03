@@ -20,34 +20,28 @@ const STEPS = [
   },
 ];
 
+const PILAR_MAX_SCORE = 30;
+
 const PILARS = [
   {
     name: "Bibit",
     score: 30,
     desc: "Latar keluarga, ibadah, gaya hidup",
-    color: "text-primary",
-    bar: "bg-primary",
   },
   {
     name: "Bebet",
     score: 20,
     desc: "Pendidikan, pekerjaan, mobilitas",
-    color: "text-accent",
-    bar: "bg-accent",
   },
   {
     name: "Bobot",
     score: 30,
     desc: "Timeline, kesiapan finansial, visi anak",
-    color: "text-adat-aman",
-    bar: "bg-adat-aman",
   },
   {
     name: "Kepribadian",
     score: 20,
     desc: "Bahasa kasih, gaya konflik, introvert",
-    color: "text-[#604AA6]",
-    bar: "bg-[#604AA6]",
   },
 ];
 
@@ -56,30 +50,40 @@ export default function Home() {
     <>
       <Navbar />
       <main className="flex-1">
+        {/* ── Tenun band (ornamen) ── */}
+        <div
+          aria-hidden="true"
+          className="h-12 w-full sm:h-[72px]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, var(--brand) 0px, var(--brand) 8px, var(--ink) 8px, var(--ink) 10px, var(--brand-tint) 10px, var(--brand-tint) 18px, var(--ink) 18px, var(--ink) 20px)",
+          }}
+        />
+
         {/* ── Hero Section ── */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-brand-maroon via-[#3A1119] to-[#1A1A1A] text-white">
-          <div className="mx-auto flex max-w-3xl flex-col items-center px-6 pb-20 pt-28 text-center sm:pt-36">
-            <div className="mb-6 h-1 w-24 rounded-full bg-brand-cream" />
-            <p className="mb-4 text-sm font-semibold tracking-[0.2em] uppercase text-brand-cream">
+        <section className="bg-brand-background">
+          <div className="mx-auto flex max-w-3xl flex-col items-center px-6 pb-20 pt-20 text-center sm:pt-28">
+            <div className="mb-6 h-1 w-24 rounded-full bg-brand" />
+            <p className="mb-4 text-sm font-semibold tracking-[0.2em] uppercase text-brand">
               Pencocokan Adat Batak
             </p>
-            <h1 className="font-heading text-6xl font-bold tracking-[0.04em] sm:text-8xl">
+            <h1 className="font-heading text-6xl font-bold tracking-[0.04em] text-brand sm:text-8xl">
               PARIBAN
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/75 sm:text-xl">
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-muted sm:text-xl">
               Platform kesiapan menikah untuk masyarakat Batak yang menghormati
               adat
             </p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link
                 href="/daftar"
-                className="inline-flex h-12 items-center rounded-xl bg-brand-maroon px-10 text-lg font-semibold text-white hover:bg-brand-red transition-colors"
+                className="inline-flex h-12 items-center rounded-xl bg-brand px-10 text-lg font-semibold text-white hover:bg-brand-hover transition-colors"
               >
                 Daftar Sekarang
               </Link>
               <Link
                 href="/masuk"
-                className="inline-flex h-12 items-center rounded-xl border border-brand-maroon/30 bg-card px-8 text-base font-semibold text-brand-maroon hover:bg-brand-maroon/5 transition-colors"
+                className="inline-flex h-12 items-center rounded-xl border border-brand/30 bg-brand-tint px-8 text-base font-semibold text-brand hover:bg-brand-tint/60 transition-colors"
               >
                 Sudah Daftar? Lihat Hasil →
               </Link>
@@ -92,10 +96,10 @@ export default function Home() {
                 ["22", "Aturan Adat"],
               ].map(([num, label]) => (
                 <div key={label} className="text-center">
-                  <p className="text-3xl font-bold text-brand-cream sm:text-4xl">
+                  <p className="text-3xl font-bold text-brand sm:text-4xl">
                     {num}
                   </p>
-                  <p className="mt-1 text-sm text-white/60">{label}</p>
+                  <p className="mt-1 text-sm text-ink-muted">{label}</p>
                 </div>
               ))}
             </div>
@@ -106,7 +110,7 @@ export default function Home() {
         <section id="cara-kerja" className="bg-card py-24">
           <div className="mx-auto max-w-5xl px-6">
             <div className="mb-16 text-center">
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-brand">
                 Cara Kerja
               </p>
               <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
@@ -143,7 +147,7 @@ export default function Home() {
         <section id="pilar" className="bg-secondary/60 py-24">
           <div className="mx-auto max-w-5xl px-6">
             <div className="mb-16 text-center">
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-brand">
                 Sistem Penilaian
               </p>
               <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
@@ -157,8 +161,11 @@ export default function Home() {
                   key={p.name}
                   className="rounded-2xl border border-border bg-card px-7 pb-8 pt-8"
                 >
-                  <div className={`mb-4 h-1 w-16 rounded-full ${p.bar}`} />
-                  <p className={`text-5xl font-bold ${p.color}`}>{p.score}</p>
+                  <div
+                    className="mb-4 h-1 rounded-full bg-brand"
+                    style={{ width: `${(p.score / PILAR_MAX_SCORE) * 64}px` }}
+                  />
+                  <p className="text-5xl font-bold text-brand">{p.score}</p>
                   <h3 className="mt-4 text-lg font-bold text-foreground">
                     {p.name}
                   </h3>
@@ -175,7 +182,7 @@ export default function Home() {
         <section className="bg-card py-24">
           <div className="mx-auto max-w-5xl px-6">
             <div className="mb-12 text-center">
-              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-accent">
+              <p className="mb-4 text-xs font-semibold tracking-[0.2em] uppercase text-brand">
                 Gerbang Adat
               </p>
               <h2 className="font-heading text-3xl font-bold leading-tight text-foreground sm:text-4xl">
@@ -227,17 +234,27 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── Tenun band (ornamen) ── */}
+        <div
+          aria-hidden="true"
+          className="h-12 w-full sm:h-[72px]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, var(--brand) 0px, var(--brand) 8px, var(--ink) 8px, var(--ink) 10px, var(--brand-tint) 10px, var(--brand-tint) 18px, var(--ink) 18px, var(--ink) 20px)",
+          }}
+        />
+
         {/* ── Footer ── */}
-        <footer className="bg-brand-maroon py-12 text-center">
-          <p className="text-2xl font-bold tracking-[0.15em] text-brand-cream">
+        <footer className="bg-brand py-12 text-center">
+          <p className="text-2xl font-bold tracking-[0.15em] text-surface">
             PARIBAN
           </p>
-          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/50">
+          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/65">
             Platform kesiapan menikah untuk masyarakat Batak.
             <br />
             Dibuat dengan menghormati adat dan budaya Batak.
           </p>
-          <p className="mt-6 text-xs text-white/55">
+          <p className="mt-6 text-xs text-white/70">
             &copy; 2026 PARIBAN. Hak cipta dilindungi.
           </p>
         </footer>

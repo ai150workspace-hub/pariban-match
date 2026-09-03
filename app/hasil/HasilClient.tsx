@@ -174,10 +174,10 @@ interface HasilData {
 }
 
 const PILAR = [
-  { key: "bibit" as const, label: "Bibit", max: 30, color: "bg-primary", text: "text-primary" },
-  { key: "bebet" as const, label: "Bebet", max: 20, color: "bg-accent", text: "text-accent" },
-  { key: "bobot" as const, label: "Bobot", max: 30, color: "bg-adat-aman", text: "text-adat-aman" },
-  { key: "kepribadian" as const, label: "Kepribadian", max: 20, color: "bg-[#604AA6]", text: "text-[#604AA6]" },
+  { key: "bibit" as const, label: "Bibit", max: 30, color: "bg-brand", text: "text-brand" },
+  { key: "bebet" as const, label: "Bebet", max: 20, color: "bg-brand", text: "text-brand" },
+  { key: "bobot" as const, label: "Bobot", max: 30, color: "bg-brand", text: "text-brand" },
+  { key: "kepribadian" as const, label: "Kepribadian", max: 20, color: "bg-brand", text: "text-brand" },
 ];
 
 function Avatar({

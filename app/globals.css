@@ -47,35 +47,21 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Semantic adat colors */
+  /* Semantic adat colors — single color per status (final palette) */
   --color-adat-aman: var(--adat-aman);
-  --color-adat-aman-fg: var(--adat-aman-fg);
   --color-adat-blokir: var(--adat-blokir);
-  --color-adat-blokir-fg: var(--adat-blokir-fg);
   --color-adat-cek: var(--adat-cek);
-  --color-adat-cek-fg: var(--adat-cek-fg);
   --color-adat-pariban: var(--adat-pariban);
-  --color-adat-pariban-fg: var(--adat-pariban-fg);
 
-  /* Brand palette (Ulos-inspired) — dipakai landing page saja */
-  --color-brand-maroon: var(--brand-maroon);
-  --color-brand-red: var(--brand-red);
-  --color-brand-cream: var(--brand-cream);
+  /* Brand palette (final) — dipakai landing page saja */
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-tint: var(--brand-tint);
+  --color-brand-background: var(--brand-background);
+  --color-brand-border: var(--brand-border);
+  --color-surface: var(--surface);
   --color-ink: var(--ink);
-
-  /* Status gerbang adat — token independen dari palet brand */
-  --color-status-marpariban: var(--status-marpariban);
-  --color-status-marpariban-bg: var(--status-marpariban-bg);
-  --color-status-marpariban-fg: var(--status-marpariban-fg);
-  --color-status-sesuai: var(--status-sesuai);
-  --color-status-sesuai-bg: var(--status-sesuai-bg);
-  --color-status-sesuai-fg: var(--status-sesuai-fg);
-  --color-status-cek: var(--status-cek);
-  --color-status-cek-bg: var(--status-cek-bg);
-  --color-status-cek-fg: var(--status-cek-fg);
-  --color-status-blokir: var(--status-blokir);
-  --color-status-blokir-bg: var(--status-blokir-bg);
-  --color-status-blokir-fg: var(--status-blokir-fg);
+  --color-ink-muted: var(--ink-muted);
 }
 
 /*
@@ -141,38 +127,26 @@
   --sidebar-border: #EDE9E3;
   --sidebar-ring: #7A1F2A;
 
-  /* Adat status colors */
-  --adat-aman: #E4EFE9;
-  --adat-aman-fg: #2D6A4F;
-  --adat-blokir: #FAEAE9;
-  --adat-blokir-fg: #DC2626;
-  --adat-cek: #FAF0DC;
-  --adat-cek-fg: #B07D2A;
-  --adat-pariban: #F7EFDC;
-  --adat-pariban-fg: #9A7B31;
+  /* Adat status colors — HANYA dipakai di badge status (final palette) */
+  --adat-pariban: #6B5416;
+  --adat-aman: #146B3A;
+  --adat-cek: #4A5568;
+  --adat-blokir: #C0261F;
 
-  /* ── Brand palette (Ulos-inspired: merah-putih-hitam) — landing only ── */
-  --brand-maroon: #4B1620;
-  --brand-red: #C1272D;
-  --brand-cream: #F5F1E8;
-  --ink: #1A1A1A;
+  /* ── Brand palette (final, merah-putih-hitam) — landing only ── */
+  --brand: #8C1C2B;
+  --brand-hover: #C1272D;
+  --brand-tint: #F7EDEC;
 
-  /* ── Status gerbang adat (independen dari palet brand) ── */
-  --status-marpariban: #A67C00;
-  --status-marpariban-bg: #F7EFDC;
-  --status-marpariban-fg: #1A1A1A;
-
-  --status-sesuai: #2D6A4F;
-  --status-sesuai-bg: #E4EFE9;
-  --status-sesuai-fg: #2D6A4F;
-
-  --status-cek: #64748B;
-  --status-cek-bg: #EAEDF1;
-  --status-cek-fg: #3B4552;
-
-  --status-blokir: #8B1E1E;
-  --status-blokir-bg: #FBEAEA;
-  --status-blokir-fg: #7A1414;
+  /* ── Base tokens (final palette). Named --brand-* / --surface where the
+     name would otherwise collide with the shared shadcn tokens above
+     (--background, --border) that /daftar, /masuk, /admin, /chat depend
+     on — this keeps those pages visually untouched. ── */
+  --brand-background: #FDFBF7;
+  --surface: #FFFFFF;
+  --ink: #1A1614;
+  --ink-muted: #5C534D;
+  --brand-border: #E5DDD3;
 }
 
 .dark {
@@ -227,15 +201,11 @@
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #D4736A;
 
-  /* Adat status colors — dark mode */
+  /* Adat status colors — dark mode (unreachable: no ThemeProvider wires .dark) */
   --adat-aman: #1B2E24;
-  --adat-aman-fg: #6FCF97;
   --adat-blokir: #2E1B19;
-  --adat-blokir-fg: #F87171;
   --adat-cek: #2E2517;
-  --adat-cek-fg: #E0B05A;
   --adat-pariban: #2E2517;
-  --adat-pariban-fg: #D4A843;
 }
 
 @layer base {
