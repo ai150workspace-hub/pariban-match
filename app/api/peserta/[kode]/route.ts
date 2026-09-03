@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { updatePeserta, deletePeserta } from "@/lib/storage";
+import { updatePeserta, deletePeserta, loadPeserta } from "@/lib/storage";
+import { logDeletion } from "@/lib/deletion-log";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const PHOTO_EXTS = ["jpg", "jpeg", "png", "webp"];
@@ -35,6 +36,38 @@ export async function DELETE(
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+
+  let body: { alasan?: string; catatanLainnya?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (!body.alasan?.trim()) {
+    return NextResponse.json({ error: "Alasan menghapus akun wajib diisi" }, { status: 400 });
+  }
+
+  const list = await loadPeserta();
+  const target = list.find((p) => p.kode === kode);
+  if (!target) {
+    return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
+  }
+
+  // Catat alasan hapus akun SEBELUM data profil dihapus
+  try {
+    await logDeletion({
+      userId: target.kode,
+      namaUser: target.nama,
+      marga: target.marga,
+      alasan: body.alasan.trim(),
+      catatanLainnya: body.catatanLainnya?.trim() || undefined,
+    });
+  } catch (e) {
+    console.error("Gagal mencatat alasan hapus akun:", e);
+    // Tetap lanjutkan penghapusan akun meski logging gagal — jangan
+    // sampai kegagalan analytics memblokir hak pengguna untuk hapus data.
+  }
 
   if (USE_SUPABASE) {
     const { getSupabase } = await import("@/lib/supabase");

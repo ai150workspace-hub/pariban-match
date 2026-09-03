@@ -63,6 +63,16 @@ interface LaporanItem {
   created_at: string;
 }
 
+interface DeletionLogItem {
+  id: string;
+  userId: string;
+  namaUser: string;
+  marga: string;
+  alasan: string;
+  catatanLainnya?: string;
+  createdAt: string;
+}
+
 interface Stats {
   totalPremium: number;
   totalPemasukan: number;
@@ -299,10 +309,11 @@ export default function AdminPage() {
   const [peserta, setPeserta] = useState<PesertaData[]>([]);
   const [matching, setMatching] = useState<MatchingResult | null>(null);
   const [laporan, setLaporan] = useState<LaporanItem[]>([]);
+  const [deletionLogs, setDeletionLogs] = useState<DeletionLogItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [demografi, setDemografi] = useState<Demografi | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"peserta" | "matching" | "laporan">("peserta");
+  const [tab, setTab] = useState<"peserta" | "matching" | "laporan" | "hapus_akun">("peserta");
   const [togglingKode, setTogglingKode] = useState<string | null>(null);
   const [banningKode, setBanningKode] = useState<string | null>(null);
 
@@ -342,13 +353,20 @@ export default function AdminPage() {
     setDemografi(data);
   }, []);
 
+  const fetchDeletionLogs = useCallback(async () => {
+    const res = await fetch("/api/admin/deletion-logs");
+    const data = await res.json();
+    setDeletionLogs(data.logs || []);
+  }, []);
+
   useEffect(() => {
     fetchPeserta();
     fetchLaporan();
     fetchMatching();
     fetchStats();
     fetchDemografi();
-  }, [fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi]);
+    fetchDeletionLogs();
+  }, [fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi, fetchDeletionLogs]);
 
   async function togglePremium(kode: string, current: boolean) {
     setTogglingKode(kode);
@@ -398,7 +416,7 @@ export default function AdminPage() {
   async function refreshAll() {
     setLoading(true);
     try {
-      await Promise.all([fetchPeserta(), fetchLaporan(), fetchMatching(), fetchStats(), fetchDemografi()]);
+      await Promise.all([fetchPeserta(), fetchLaporan(), fetchMatching(), fetchStats(), fetchDemografi(), fetchDeletionLogs()]);
     } finally {
       setLoading(false);
     }
@@ -710,6 +728,15 @@ export default function AdminPage() {
                 </span>
               )}
             </button>
+            <button type="button" onClick={() => setTab("hapus_akun")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "hapus_akun" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`}>
+              Hapus Akun
+              {deletionLogs.length > 0 && (
+                <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary-foreground/20 text-[10px] font-bold">
+                  {deletionLogs.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* ── Tab: Daftar Peserta ── */}
@@ -849,6 +876,44 @@ export default function AdminPage() {
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* ── Tab: Hapus Akun ── */}
+          {tab === "hapus_akun" && (
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              {deletionLogs.length === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-lg font-semibold text-foreground mb-1">Belum ada akun yang dihapus</p>
+                  <p className="text-sm text-muted-foreground">Laporan alasan hapus akun akan muncul di sini.</p>
+                </div>
+              ) : (
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/50">
+                      <th className="px-4 py-3 text-left font-semibold">Tanggal Hapus</th>
+                      <th className="px-4 py-3 text-left font-semibold">Nama & Marga</th>
+                      <th className="px-4 py-3 text-left font-semibold">Alasan</th>
+                      <th className="px-4 py-3 text-left font-semibold">Catatan Tambahan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deletionLogs.map((l) => (
+                      <tr key={l.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                        <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                          {new Date(l.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-foreground">{l.namaUser}</p>
+                          <p className="text-xs text-muted-foreground">{l.marga || "—"} · <span className="font-mono">{l.userId}</span></p>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground max-w-xs text-xs leading-relaxed">{l.alasan}</td>
+                        <td className="px-4 py-3 text-muted-foreground max-w-xs text-xs leading-relaxed">{l.catatanLainnya || "—"}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               )}

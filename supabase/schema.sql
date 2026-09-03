@@ -91,6 +91,25 @@ ALTER TABLE pesan DISABLE ROW LEVEL SECURITY;
 -- Supabase Dashboard → Database → Replication → centang tabel "pesan"
 
 -- ================================================================
+-- Tabel log alasan hapus akun (Account Deletion Feedback)
+-- Sengaja TIDAK punya foreign key ke peserta(kode) — baris log ini
+-- harus tetap ada justru SETELAH baris peserta yang bersangkutan
+-- dihapus, supaya datanya tetap bisa dipantau di dashboard admin.
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS deletion_logs (
+  id              UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id         TEXT NOT NULL,   -- kode peserta (mis. "P001") pada saat dihapus
+  nama_user       TEXT NOT NULL,
+  marga           TEXT,
+  alasan          TEXT NOT NULL,
+  catatan_lainnya TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_deletion_logs_created ON deletion_logs (created_at DESC);
+ALTER TABLE deletion_logs DISABLE ROW LEVEL SECURITY;
+
+-- ================================================================
 -- Storage bucket untuk foto profil
 -- Lakukan di: Supabase Dashboard → Storage → New Bucket
 -- Nama bucket : pariban-photos

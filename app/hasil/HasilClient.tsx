@@ -173,6 +173,16 @@ interface HasilData {
   top3: Match[];
 }
 
+const ALASAN_HAPUS_LAINNYA = "Lainnya";
+const ALASAN_HAPUS_OPTIONS = [
+  "Sudah menemukan pasangan di PARIBAN Match",
+  "Sudah menemukan pasangan di luar aplikasi",
+  "Kurang cocok dengan pilihan kandidat yang ada",
+  "Khawatir masalah privasi & keamanan data",
+  "Aplikasi sulit digunakan / masalah teknis",
+  ALASAN_HAPUS_LAINNYA,
+] as const;
+
 const PILAR = [
   { key: "bibit" as const, label: "Bibit", max: 30, color: "bg-brand", text: "text-brand" },
   { key: "bebet" as const, label: "Bebet", max: 20, color: "bg-brand", text: "text-brand" },
@@ -709,6 +719,8 @@ export default function HasilClient({ kode }: { kode: string }) {
   const [chatError, setChatError] = useState("");
   const [candidatePhotoPreview, setCandidatePhotoPreview] = useState<string | null>(null);
   const [showHapusModal, setShowHapusModal] = useState(false);
+  const [hapusAlasan, setHapusAlasan] = useState("");
+  const [hapusCatatanLainnya, setHapusCatatanLainnya] = useState("");
   const [hapusKonfirmasi, setHapusKonfirmasi] = useState("");
   const [hapusLoading, setHapusLoading] = useState(false);
   const [hapusError, setHapusError] = useState("");
@@ -797,12 +809,24 @@ export default function HasilClient({ kode }: { kode: string }) {
     router.push("/masuk");
   }
 
+  const hapusBisaDikirim =
+    !!hapusAlasan &&
+    (hapusAlasan !== ALASAN_HAPUS_LAINNYA || !!hapusCatatanLainnya.trim()) &&
+    hapusKonfirmasi.trim().toUpperCase() === "HAPUS";
+
   async function handleHapusAkun() {
-    if (hapusKonfirmasi.trim().toUpperCase() !== "HAPUS") return;
+    if (!hapusBisaDikirim) return;
     setHapusLoading(true);
     setHapusError("");
     try {
-      const res = await fetch(`/api/peserta/${kode}`, { method: "DELETE" });
+      const res = await fetch(`/api/peserta/${kode}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          alasan: hapusAlasan,
+          ...(hapusAlasan === ALASAN_HAPUS_LAINNYA && { catatanLainnya: hapusCatatanLainnya.trim() }),
+        }),
+      });
       if (!res.ok) {
         const result = await res.json().catch(() => ({}));
         setHapusError(result.error || "Gagal menghapus akun. Coba lagi.");
@@ -985,6 +1009,30 @@ export default function HasilClient({ kode }: { kode: string }) {
             </div>
 
             <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Alasan menghapus akun <span className="text-red-600">*</span>
+            </label>
+            <select
+              value={hapusAlasan}
+              onChange={(e) => setHapusAlasan(e.target.value)}
+              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-red-400/30"
+            >
+              <option value="">— Pilih alasan —</option>
+              {ALASAN_HAPUS_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+
+            {hapusAlasan === ALASAN_HAPUS_LAINNYA && (
+              <input
+                type="text"
+                value={hapusCatatanLainnya}
+                onChange={(e) => setHapusCatatanLainnya(e.target.value)}
+                placeholder="Ceritakan alasan singkatmu..."
+                className="mt-3 w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-400/30"
+              />
+            )}
+
+            <label className="mb-1.5 mt-4 block text-sm font-medium text-foreground">
               Ketik <strong>HAPUS</strong> untuk konfirmasi
             </label>
             <input
@@ -1002,6 +1050,8 @@ export default function HasilClient({ kode }: { kode: string }) {
                 type="button"
                 onClick={() => {
                   setShowHapusModal(false);
+                  setHapusAlasan("");
+                  setHapusCatatanLainnya("");
                   setHapusKonfirmasi("");
                   setHapusError("");
                 }}
@@ -1012,7 +1062,7 @@ export default function HasilClient({ kode }: { kode: string }) {
               <button
                 type="button"
                 onClick={handleHapusAkun}
-                disabled={hapusKonfirmasi.trim().toUpperCase() !== "HAPUS" || hapusLoading}
+                disabled={!hapusBisaDikirim || hapusLoading}
                 className="flex-1 inline-flex h-11 items-center justify-center rounded-lg bg-red-600 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {hapusLoading ? "Menghapus..." : "Hapus Akun Saya"}
