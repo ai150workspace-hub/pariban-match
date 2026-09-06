@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { readFile, writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 import { updatePeserta } from "@/lib/storage";
+import { ADMIN_COOKIE_NAME, isValidAdminToken } from "@/lib/admin-token";
 
 const PHOTOS_DIR = join(process.cwd(), ".data", "photos");
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -15,6 +17,13 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ kode: string }> },
 ) {
+  const cookieStore = await cookies();
+  const pesertaKode = cookieStore.get("pariban_kode")?.value;
+  const adminToken = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
+  if (!pesertaKode && !isValidAdminToken(adminToken)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
   const { kode } = await params;
   const url = new URL(req.url);
   const index = url.searchParams.get("index"); // null = profile foto

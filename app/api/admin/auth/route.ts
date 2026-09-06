@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ADMIN_COOKIE_NAME, computeAdminToken } from "@/lib/admin-token";
 
 export async function POST(req: Request) {
   let body: { password: string };
@@ -17,5 +18,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Password salah" }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(ADMIN_COOKIE_NAME, computeAdminToken()!, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7, // 7 hari, sama seperti sesi peserta
+  });
+  return res;
+}
+
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(ADMIN_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
+  return res;
 }

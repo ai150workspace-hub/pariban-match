@@ -465,7 +465,11 @@ export default function AdminPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { sessionStorage.removeItem("admin_auth"); setAuthed(false); }}
+              onClick={() => {
+                sessionStorage.removeItem("admin_auth");
+                setAuthed(false);
+                fetch("/api/admin/auth", { method: "DELETE" }).catch(() => {});
+              }}
               className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary hover:text-primary"
             >
               Keluar
