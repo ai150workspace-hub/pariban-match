@@ -24,6 +24,12 @@ export function Navbar() {
             Penilaian
           </Link>
           <Link
+            href="/harga"
+            className="hidden text-sm font-medium text-muted-foreground hover:text-foreground transition-colors sm:inline"
+          >
+            Harga
+          </Link>
+          <Link
             href="/daftar"
             className="inline-flex h-9 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-hover transition-colors"
           >

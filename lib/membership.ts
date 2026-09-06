@@ -1,4 +1,5 @@
 import type { Peserta } from "./adat/types";
+import { TRIAL_DURASI_HARI } from "./pricing";
 
 export type MembershipStatus = "trial" | "premium" | "free";
 
@@ -29,9 +30,16 @@ export function getTrialDaysLeft(p: Pick<Peserta, "trialEndsAt">): number {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-/** ISO string for 30 days (1 bulan) from now — use when creating a new peserta. */
+/**
+ * ISO string for TRIAL_DURASI_HARI days from now — use when creating a new
+ * peserta. Hasilnya adalah tanggal absolut yang disimpan sekali di kolom
+ * trialEndsAt; mengubah TRIAL_DURASI_HARI di lib/pricing.ts hanya berlaku
+ * untuk pendaftaran BARU dan tidak memotong trial yang sudah berjalan,
+ * karena trial lama sudah punya trialEndsAt tersimpan dan tidak pernah
+ * dihitung ulang dari konstanta ini.
+ */
 export function newTrialExpiry(): string {
   const d = new Date();
-  d.setDate(d.getDate() + 30);
+  d.setDate(d.getDate() + TRIAL_DURASI_HARI);
   return d.toISOString();
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
+import { PAKET_PREMIUM, isPaketId, type PaketId } from "@/lib/pricing";
 
 const SERVER_KEY = process.env.MIDTRANS_SERVER_KEY ?? "";
 const IS_PRODUCTION = process.env.MIDTRANS_IS_PRODUCTION === "true";
@@ -8,19 +9,7 @@ const SNAP_URL = IS_PRODUCTION
   ? "https://app.midtrans.com/snap/v1/transactions"
   : "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
-const HARGA_PAKET = {
-  "1bln": 19900,
-  "3bln": 49900,
-  "6bln": 89900,
-} as const;
-
-const NAMA_PAKET = {
-  "1bln": "1 Bulan",
-  "3bln": "3 Bulan",
-  "6bln": "6 Bulan",
-} as const;
-
-type Paket = keyof typeof HARGA_PAKET;
+type Paket = PaketId;
 
 export async function POST(req: Request) {
   if (!SERVER_KEY) {
@@ -39,7 +28,7 @@ export async function POST(req: Request) {
 
   const { kode, paket } = body;
   if (!kode) return NextResponse.json({ error: "Kode peserta diperlukan" }, { status: 400 });
-  if (!paket || !HARGA_PAKET[paket]) {
+  if (!paket || !isPaketId(paket)) {
     return NextResponse.json({ error: "Paket tidak valid (1bln/3bln/6bln)" }, { status: 400 });
   }
 
@@ -55,7 +44,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Peserta sudah memiliki premium berbayar yang aktif" }, { status: 400 });
   }
 
-  const harga = HARGA_PAKET[paket];
+  const paketInfo = PAKET_PREMIUM.find((p) => p.id === paket)!;
+  const harga = paketInfo.harga;
   const orderId = `PARIBAN-${kode}-${paket}-${Date.now()}`;
   const auth = Buffer.from(SERVER_KEY + ":").toString("base64");
 
@@ -74,7 +64,7 @@ export async function POST(req: Request) {
         id: `PARIBAN-PREMIUM-${paket.toUpperCase()}`,
         price: harga,
         quantity: 1,
-        name: `PARIBAN Premium — ${NAMA_PAKET[paket]}`,
+        name: `PARIBAN Premium — ${paketInfo.nama}`,
       },
     ],
     callbacks: {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
+import { TenunBand, Footer } from "@/components/footer";
 
 const STEPS = [
   {
@@ -50,15 +51,7 @@ export default function Home() {
     <>
       <Navbar />
       <main className="flex-1">
-        {/* ── Tenun band (ornamen) ── */}
-        <div
-          aria-hidden="true"
-          className="h-12 w-full sm:h-[72px]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, var(--brand) 0px, var(--brand) 8px, var(--ink) 8px, var(--ink) 10px, var(--brand-tint) 10px, var(--brand-tint) 18px, var(--ink) 18px, var(--ink) 20px)",
-          }}
-        />
+        <TenunBand />
 
         {/* ── Hero Section ── */}
         <section className="bg-brand-background">
@@ -234,30 +227,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Tenun band (ornamen) ── */}
-        <div
-          aria-hidden="true"
-          className="h-12 w-full sm:h-[72px]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, var(--brand) 0px, var(--brand) 8px, var(--ink) 8px, var(--ink) 10px, var(--brand-tint) 10px, var(--brand-tint) 18px, var(--ink) 18px, var(--ink) 20px)",
-          }}
-        />
-
-        {/* ── Footer ── */}
-        <footer className="bg-brand py-12 text-center">
-          <p className="text-2xl font-bold tracking-[0.15em] text-surface">
-            PARIBAN
-          </p>
-          <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-white/65">
-            Platform kesiapan menikah untuk masyarakat Batak.
-            <br />
-            Dibuat dengan menghormati adat dan budaya Batak.
-          </p>
-          <p className="mt-6 text-xs text-white/70">
-            &copy; 2026 PARIBAN. Hak cipta dilindungi.
-          </p>
-        </footer>
+        <Footer />
       </main>
     </>
   );

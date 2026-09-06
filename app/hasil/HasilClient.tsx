@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
+import { PAKET_PREMIUM, TRIAL_DURASI_HARI, type PaketId } from "@/lib/pricing";
 
 const IS_PRODUCTION = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
 const CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "";
@@ -32,51 +33,7 @@ declare global {
 
 const PREMIUM_THRESHOLD = 90;
 
-type PaketId = "1bln" | "3bln" | "6bln";
-
-interface PaketInfo {
-  id: PaketId;
-  nama: string;
-  deskripsi: string;
-  harga: number;
-  hargaCoret: number | null;
-  perBulan: number | null;
-  hemat: string | null;
-  badge: string | null;
-}
-
-const PAKET: PaketInfo[] = [
-  {
-    id: "1bln",
-    nama: "1 Bulan",
-    deskripsi: "Akses penuh selama 30 hari",
-    harga: 19900,
-    hargaCoret: null,
-    perBulan: null,
-    hemat: null,
-    badge: null,
-  },
-  {
-    id: "3bln",
-    nama: "3 Bulan",
-    deskripsi: "90 hari akses penuh tanpa batas",
-    harga: 49900,
-    hargaCoret: 59700,
-    perBulan: 16633,
-    hemat: "Hemat ~16%",
-    badge: null,
-  },
-  {
-    id: "6bln",
-    nama: "6 Bulan",
-    deskripsi: "180 hari akses penuh tanpa batas",
-    harga: 89900,
-    hargaCoret: 119400,
-    perBulan: 14983,
-    hemat: "Hemat ~25%",
-    badge: "Paling Hemat",
-  },
-];
+const PAKET = PAKET_PREMIUM;
 
 interface Rinci {
   bibit: number;
@@ -927,7 +884,7 @@ export default function HasilClient({ kode }: { kode: string }) {
                   <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 text-3xl">⏰</div>
                   <h3 className="font-heading text-xl font-bold text-foreground">Trial Gratis Telah Berakhir</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Masa trial 1 bulan kamu sudah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur PARIBAN Premium.
+                    Masa trial {TRIAL_DURASI_HARI} hari kamu sudah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur PARIBAN Premium.
                   </p>
                 </div>
               </>
@@ -1167,7 +1124,7 @@ export default function HasilClient({ kode }: { kode: string }) {
               <div className="flex-1">
                 <p className="font-semibold text-foreground">Masa Trial Gratis Kamu Sudah Berakhir</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Trial 1 bulan telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
+                  Trial {TRIAL_DURASI_HARI} hari telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
                 </p>
                 {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
                 <button

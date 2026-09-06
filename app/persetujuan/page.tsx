@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SYARAT_KETENTUAN } from "@/lib/content/syarat";
 
 function PersetujuanForm() {
   const router = useRouter();
@@ -44,31 +45,20 @@ function PersetujuanForm() {
         <div className="rounded-2xl border border-border bg-card p-6 space-y-6">
           {/* Terms */}
           <div className="rounded-xl bg-secondary/50 p-5 space-y-4 text-sm text-muted-foreground leading-relaxed max-h-64 overflow-y-auto">
-            <div>
-              <p className="font-semibold text-foreground mb-1">1. Kejujuran & Keaslian Data</p>
-              <p>Saya bersedia mengisi data profil dengan jujur dan apa adanya. Data palsu dapat menyebabkan penghapusan akun secara permanen.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground mb-1">2. Persyaratan Usia & Status</p>
-              <p>Saya menyatakan bahwa saya berusia <strong>minimal 21 tahun</strong> dan berstatus <strong>lajang / single</strong> (belum menikah dan tidak dalam hubungan terikat).</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground mb-1">3. Niat Serius</p>
-              <p>Saya menggunakan PARIBAN Match dengan niat serius untuk menemukan pasangan hidup, bukan sekadar iseng atau mengumpulkan kontak.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground mb-1">4. Sopan Santun & Etika</p>
-              <p>Saya berjanji untuk menjaga sopan santun, tidak mengirim konten tidak pantas, dan menghormati privasi sesama pengguna.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground mb-1">5. Privasi Data</p>
-              <p>Saya memahami bahwa data yang saya masukkan akan digunakan untuk proses pencocokan sesuai dengan adat Batak, dan tidak akan dibagikan kepada pihak ketiga tanpa persetujuan saya.</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground mb-1">6. Syarat & Ketentuan Platform</p>
-              <p>Saya sudah membaca, mengerti, dan setuju dengan seluruh Syarat & Ketentuan yang berlaku di PARIBAN Match.</p>
-            </div>
+            {SYARAT_KETENTUAN.map((k) => (
+              <div key={k.judul}>
+                <p className="font-semibold text-foreground mb-1">{k.judul}</p>
+                <p>{k.isi}</p>
+              </div>
+            ))}
           </div>
+          <p className="text-center text-xs text-muted-foreground">
+            Baca versi lengkap di{" "}
+            <Link href="/syarat" target="_blank" className="text-primary hover:underline">
+              halaman Syarat & Ketentuan
+            </Link>
+            .
+          </p>
 
           {/* Checkbox Persetujuan */}
           <label className={`flex cursor-pointer items-start gap-4 rounded-xl border-2 p-4 transition-all ${
