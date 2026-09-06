@@ -9,13 +9,7 @@ export const metadata: Metadata = {
   description: "Paket berlangganan PARIBAN Match: trial gratis 14 hari dan paket premium 1, 3, atau 6 bulan.",
 };
 
-const METODE_PEMBAYARAN = [
-  "Virtual Account (BCA, BNI, BRI, Mandiri, Permata, dll.)",
-  "QRIS",
-  "E-wallet (GoPay, ShopeePay, dll.)",
-  "Kartu kredit/debit",
-  "Gerai ritel (Alfamart, Indomaret)",
-];
+const METODE_PEMBAYARAN = ["QRIS"];
 
 export default function HargaPage() {
   return (
@@ -91,7 +85,7 @@ export default function HargaPage() {
           {/* Metode pembayaran */}
           <div className="mt-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
             <h2 className="font-heading text-lg font-bold text-foreground">Metode Pembayaran</h2>
-            <ul className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               {METODE_PEMBAYARAN.map((m) => (
                 <li key={m} className="flex items-start gap-2">
                   <span className="mt-0.5 text-brand">✓</span>
