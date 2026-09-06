@@ -8,10 +8,39 @@ export const metadata: Metadata = {
 };
 
 const KONTAK = [
-  { label: "Email", value: "[ISI]" },
-  { label: "WhatsApp", value: "[ISI]" },
-  { label: "Jam Operasional", value: "[ISI]" },
-  { label: "Alamat Usaha", value: "[ISI]" },
+  {
+    label: "Email",
+    value: "financepariban@gmail.com",
+    href: "mailto:financepariban@gmail.com",
+  },
+  {
+    label: "WhatsApp",
+    value: "+62 852-7515-7574",
+    href: "https://wa.me/6285275157574",
+  },
+  {
+    label: "Jam Operasional",
+    value: (
+      <>
+        Senin–Jumat 09.00–17.00 WIB
+        <br />
+        Sabtu, Minggu, dan hari libur nasional tutup (dukungan terbatas melalui email)
+      </>
+    ),
+  },
+  {
+    label: "Alamat",
+    value: (
+      <>
+        Jl. Sunburst CBD, Jl. Kapten Soebijanto Djojohadikusumo No. 8 Lot I,
+        Lengkong Gudang, Kec. Serpong, Kota Tangerang Selatan, Banten 15321
+      </>
+    ),
+  },
+  {
+    label: "Penanggung Jawab",
+    value: "Betty Luciana Situmorang (usaha perorangan)",
+  },
 ];
 
 export default function KontakPage() {
@@ -35,9 +64,15 @@ export default function KontakPage() {
 
           <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 divide-y divide-border">
             {KONTAK.map((k) => (
-              <div key={k.label} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
+              <div key={k.label} className="py-4 first:pt-0 last:pb-0">
                 <p className="text-sm font-semibold text-foreground">{k.label}</p>
-                <p className="text-sm text-muted-foreground">{k.value}</p>
+                {k.href ? (
+                  <a href={k.href} className="mt-1 block text-sm text-brand hover:underline">
+                    {k.value}
+                  </a>
+                ) : (
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{k.value}</p>
+                )}
               </div>
             ))}
           </div>

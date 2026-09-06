@@ -41,8 +41,19 @@ export function Footer() {
             </Link>
           ))}
         </nav>
+        <p className="mt-4 text-xs text-white/70">
+          <a href="mailto:financepariban@gmail.com" className="hover:text-white transition-colors">
+            financepariban@gmail.com
+          </a>
+          {" · "}
+          <a href="https://wa.me/6285275157574" className="hover:text-white transition-colors">
+            WhatsApp +62 852-7515-7574
+          </a>
+        </p>
         <p className="mt-6 text-xs text-white/70">
           &copy; 2026 PARIBAN. Hak cipta dilindungi.
+          <br />
+          Betty Luciana Situmorang (usaha perorangan)
         </p>
       </footer>
     </>
