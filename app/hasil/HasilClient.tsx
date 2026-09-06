@@ -923,18 +923,12 @@ export default function HasilClient({ kode }: { kode: string }) {
                     <p className="text-xs text-muted-foreground mt-0.5">{pk.deskripsi}</p>
                   </div>
                   <div className="text-right ml-4 shrink-0">
-                    {pk.hargaCoret && (
-                      <p className="text-xs text-muted-foreground line-through">
-                        Rp {pk.hargaCoret.toLocaleString("id-ID")}
-                      </p>
-                    )}
                     <p className="font-bold text-primary">Rp {pk.harga.toLocaleString("id-ID")}</p>
                     {pk.perBulan && (
                       <p className="text-[10px] text-muted-foreground">
-                        Rp {pk.perBulan.toLocaleString("id-ID")}/bln
+                        setara Rp {pk.perBulan.toLocaleString("id-ID")}/bulan
                       </p>
                     )}
-                    {pk.hemat && <p className="text-xs text-green-600 font-medium">{pk.hemat}</p>}
                   </div>
                 </button>
               ))}

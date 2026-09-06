@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { saveOauthPrefill } from "@/lib/oauth-prefill";
 
 function OAuthCallbackInner() {
   const { data: session, status } = useSession();
@@ -40,11 +41,12 @@ function OAuthCallbackInner() {
         if (ok && data.kode) {
           router.replace("/hasil");
         } else {
-          // Belum terdaftar — arahkan ke halaman persetujuan dulu
+          // Belum terdaftar — arahkan ke halaman persetujuan dulu.
+          // Email/nama dititipkan lewat sessionStorage, bukan query
+          // string, supaya tidak tercetak di address bar.
           const nama = session?.user?.name ?? "";
-          const q = new URLSearchParams({ email });
-          if (nama) q.set("nama", nama);
-          router.replace(`/persetujuan?${q.toString()}`);
+          saveOauthPrefill({ email, ...(nama && { nama }) });
+          router.replace("/persetujuan");
         }
       })
       .catch(() => {

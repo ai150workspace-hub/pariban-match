@@ -3,24 +3,19 @@
 export const dynamic = "force-dynamic";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SYARAT_KETENTUAN } from "@/lib/content/syarat";
 
 function PersetujuanForm() {
   const router = useRouter();
-  const params = useSearchParams();
-  const email = params.get("email") ?? "";
-  const nama = params.get("nama") ?? "";
-
   const [disetujui, setDisetujui] = useState(false);
 
   function lanjutkan() {
     if (!disetujui) return;
-    const q = new URLSearchParams();
-    if (email) q.set("email", email);
-    if (nama) q.set("nama", nama);
-    router.push(`/daftar?${q.toString()}`);
+    // Email/nama dari OAuth (kalau ada) sudah tersimpan di sessionStorage
+    // sejak /oauth/callback — /daftar membacanya dari sana, bukan dari URL.
+    router.push("/daftar");
   }
 
   return (

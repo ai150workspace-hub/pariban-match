@@ -4,12 +4,12 @@ export const dynamic = "force-dynamic";
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { StepIndicator } from "@/components/daftar/step-indicator";
 import { FormField } from "@/components/daftar/form-field";
 import { MargaSelect } from "@/components/daftar/marga-select";
 import { KOTA_PER_PROVINSI, PROVINSI_LIST } from "@/lib/wilayah";
+import { readOauthPrefill, clearOauthPrefill } from "@/lib/oauth-prefill";
 
 const INITIAL = {
   nama: "",
@@ -154,26 +154,25 @@ function isStepValid(step: number, data: typeof INITIAL, fromOAuth: boolean): bo
 }
 
 function DaftarForm() {
-  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [data, setData] = useState(INITIAL);
   const [provinsi, setProvinsi] = useState("");
   const [fromOAuth, setFromOAuth] = useState(false);
 
   useEffect(() => {
-    const emailFromOAuth = searchParams.get("email");
-    const namaFromOAuth = searchParams.get("nama");
-    if (emailFromOAuth) {
+    const prefill = readOauthPrefill();
+    if (prefill?.email) {
       setFromOAuth(true);
       setData((prev) => ({
         ...prev,
-        email: emailFromOAuth,
-        ...(namaFromOAuth ? { nama: namaFromOAuth } : {}),
+        email: prefill.email,
+        ...(prefill.nama ? { nama: prefill.nama } : {}),
       }));
+      clearOauthPrefill();
       // Jika sudah ada email dari OAuth + consent, langsung ke step 1
       setStep(1);
     }
-  }, [searchParams]);
+  }, []);
 
   const [minat, setMinat] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);

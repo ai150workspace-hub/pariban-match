@@ -12,9 +12,7 @@ export interface PaketInfo {
   deskripsi: string;
   harga: number;
   durasiHari: number;
-  hargaCoret: number | null;
   perBulan: number | null;
-  hemat: string | null;
   badge: string | null;
 }
 
@@ -31,9 +29,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     deskripsi: "Akses penuh selama 30 hari",
     harga: 19900,
     durasiHari: 30,
-    hargaCoret: null,
     perBulan: null,
-    hemat: null,
     badge: null,
   },
   {
@@ -42,9 +38,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     deskripsi: "90 hari akses penuh tanpa batas",
     harga: 49900,
     durasiHari: 90,
-    hargaCoret: 59700,
     perBulan: 16633,
-    hemat: "Hemat ~16%",
     badge: null,
   },
   {
@@ -53,9 +47,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     deskripsi: "180 hari akses penuh tanpa batas",
     harga: 89900,
     durasiHari: 180,
-    hargaCoret: 119400,
     perBulan: 14983,
-    hemat: "Hemat ~25%",
     badge: "Paling Hemat",
   },
 ];
