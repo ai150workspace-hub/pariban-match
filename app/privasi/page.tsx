@@ -74,7 +74,7 @@ export default function PrivasiPage() {
                 <li>Kandidat lain di platform — inisial nama, foto, dan sebagian profil ditampilkan kepada peserta yang cocok dengan Anda sebagai bagian inti dari fitur pencocokan</li>
               </ul>
               <p className="mt-2">
-                Catatan teknis: foto profil disimpan di storage bucket yang bersifat publik — siapa pun yang memiliki tautan langsung ke file foto dapat mengaksesnya tanpa perlu login ke PARIBAN.
+                Catatan teknis: foto profil disimpan di storage privat, bukan publik. Setiap kali foto ditampilkan di aplikasi, server kami membuatkan tautan sementara (signed URL) yang otomatis kedaluwarsa dalam 1 jam — bukan tautan permanen yang bisa diakses langsung dari internet.
               </p>
             </Bagian>
 

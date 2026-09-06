@@ -113,5 +113,17 @@ ALTER TABLE deletion_logs DISABLE ROW LEVEL SECURITY;
 -- Storage bucket untuk foto profil
 -- Lakukan di: Supabase Dashboard → Storage → New Bucket
 -- Nama bucket : pariban-photos
--- Public      : YES (centang "Public bucket")
+-- Public      : NO (JANGAN centang "Public bucket")
+--
+-- Bucket ini HARUS private. Nama file bisa ditebak (kode peserta
+-- sekuensial P001, P002, ... + ekstensi terbatas), jadi bucket
+-- public berarti siapa pun di internet bisa mengakses/enumerate
+-- seluruh foto peserta langsung dari Supabase CDN tanpa lewat
+-- aplikasi PARIBAN sama sekali. Akses foto HARUS lewat
+-- GET /api/photos/[kode], yang men-generate signed URL berdurasi
+-- 1 jam secara server-side (lihat app/api/photos/[kode]/route.ts).
+--
+-- Kalau bucket ini sudah pernah dibuat sebagai PUBLIC sebelumnya,
+-- ubah manual: Storage → pariban-photos → Settings → matikan
+-- "Public bucket".
 -- ================================================================

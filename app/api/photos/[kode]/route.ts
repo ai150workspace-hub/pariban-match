@@ -9,6 +9,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const BUCKET = "pariban-photos";
+const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 jam
 
 export async function GET(
   req: Request,
@@ -23,9 +24,12 @@ export async function GET(
     const { getSupabase } = await import("@/lib/supabase");
     const sb = getSupabase();
     for (const ext of ["jpg", "jpeg", "png", "webp"]) {
-      const { data } = sb.storage.from(BUCKET).getPublicUrl(`${prefix}.${ext}`);
-      const check = await fetch(data.publicUrl, { method: "HEAD" });
-      if (check.ok) return NextResponse.redirect(data.publicUrl, { status: 302 });
+      const { data, error } = await sb.storage
+        .from(BUCKET)
+        .createSignedUrl(`${prefix}.${ext}`, SIGNED_URL_TTL_SECONDS);
+      if (!error && data?.signedUrl) {
+        return NextResponse.redirect(data.signedUrl, { status: 302 });
+      }
     }
     return new NextResponse("Not found", { status: 404 });
   }
