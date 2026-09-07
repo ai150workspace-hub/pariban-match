@@ -174,6 +174,7 @@ export async function sendHasilMatching(
 
 const NAMA_PAKET: Record<string, string> = {
   trial: "Promo Launch 1 Bulan",
+  "1bln": "1 Bulan",
   "3bln": "3 Bulan",
   "6bln": "6 Bulan",
 };
