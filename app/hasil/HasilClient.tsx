@@ -917,11 +917,10 @@ export default function HasilClient({ kode }: { kode: string }) {
 
             <div className={`space-y-3 ${trialExpired ? "" : "mt-0"}`}>
               {PAKET.map((pk) => (
-                <button
+                <a
                   key={pk.id}
-                  onClick={() => handleUpgrade(pk.id)}
-                  disabled={payLoading}
-                  className={`w-full flex items-center justify-between rounded-xl border px-5 py-4 hover:border-accent/40 hover:bg-accent/5 transition-colors text-left disabled:opacity-60 ${
+                  href={pk.mayarLink}
+                  className={`w-full flex items-center justify-between rounded-xl border px-5 py-4 hover:border-accent/40 hover:bg-accent/5 transition-colors text-left ${
                     pk.badge === "Paling Hemat"
                       ? "border-accent/50 bg-accent/5"
                       : "border-border bg-secondary/50"
@@ -950,14 +949,12 @@ export default function HasilClient({ kode }: { kode: string }) {
                       </p>
                     )}
                   </div>
-                </button>
+                </a>
               ))}
             </div>
 
-            {payError && <p className="mt-3 text-sm text-red-600">{payError}</p>}
-
             <button
-              onClick={() => { setShowPaketModal(false); setPayError(""); }}
+              onClick={() => setShowPaketModal(false)}
               className="mt-4 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
             >
               Batal

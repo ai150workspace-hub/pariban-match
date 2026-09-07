@@ -14,6 +14,8 @@ export interface PaketInfo {
   durasiHari: number;
   perBulan: number | null;
   badge: string | null;
+  /** Link Pembayaran Mayar.id statis untuk paket ini. */
+  mayarLink: string;
 }
 
 /** Durasi trial gratis untuk pendaftaran baru. Perubahan nilai ini TIDAK
@@ -31,6 +33,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 30,
     perBulan: null,
     badge: null,
+    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-1-bulan",
   },
   {
     id: "3bln",
@@ -40,6 +43,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 90,
     perBulan: 16633,
     badge: null,
+    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-3-bulan",
   },
   {
     id: "6bln",
@@ -49,6 +53,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 180,
     perBulan: 14983,
     badge: "Paling Hemat",
+    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-6-bulan",
   },
 ];
 
