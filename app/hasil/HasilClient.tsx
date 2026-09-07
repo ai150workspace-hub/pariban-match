@@ -672,6 +672,7 @@ export default function HasilClient({ kode }: { kode: string }) {
   const [payError, setPayError] = useState("");
   const [snapReady, setSnapReady] = useState(false);
   const [showPaketModal, setShowPaketModal] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
   const [chatLoading, setChatLoading] = useState<string | null>(null);
   const [chatError, setChatError] = useState("");
   const [candidatePhotoPreview, setCandidatePhotoPreview] = useState<string | null>(null);
@@ -703,9 +704,28 @@ export default function HasilClient({ kode }: { kode: string }) {
   }, [loadData]);
 
   useEffect(() => {
-    if (searchParams.get("payment") === "success") {
+    // Midtrans kembali dengan ?payment=success, Mayar dengan ?status=success.
+    // Kembalinya browser ke sini BUKAN bukti pembayaran berhasil — gateway
+    // manapun bisa saja mengarahkan ke sini walau pembayaran dibatalkan atau
+    // belum selesai. Status Premium hanya pernah diaktifkan oleh webhook
+    // server-ke-server yang sudah diverifikasi (api/payment/notify), bukan
+    // oleh query parameter ini. Efek ini cuma memicu refresh data supaya
+    // kalau webhook-nya sudah lebih dulu diproses, hasilnya langsung
+    // terlihat — bukan menetapkan status apa pun sendiri.
+    const paymentReturn =
+      searchParams.get("payment") === "success" ||
+      searchParams.get("status") === "success";
+    if (!paymentReturn) return;
+
+    setCheckingPayment(true);
+    loadData();
+    // Webhook gateway kadang baru sampai beberapa detik setelah pengguna
+    // sudah kembali ke halaman ini — coba refresh sekali lagi.
+    const retry = setTimeout(() => {
       loadData();
-    }
+      setCheckingPayment(false);
+    }, 3000);
+    return () => clearTimeout(retry);
   }, [searchParams, loadData]);
 
   async function handleUpgrade(paket: PaketId) {
@@ -1042,6 +1062,16 @@ export default function HasilClient({ kode }: { kode: string }) {
       </nav>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
+        {/* Konfirmasi kembali dari payment gateway (Midtrans/Mayar) */}
+        {checkingPayment && (
+          <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-3">
+            <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm text-foreground">
+              Memeriksa status pembayaran kamu, mohon tunggu sebentar...
+            </p>
+          </div>
+        )}
+
         {/* Peserta Header */}
         <div className="mb-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
           <div className="flex items-center gap-5">
