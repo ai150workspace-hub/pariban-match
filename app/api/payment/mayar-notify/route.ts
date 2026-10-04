@@ -38,15 +38,43 @@ function isPaid(status: unknown): boolean {
   return false;
 }
 
+interface MayarWebhookData {
+  status?: unknown;
+  amount?: number;
+  customerEmail?: string;
+  customerMobile?: string;
+  productName?: string;
+  transactionId?: string;
+  id?: string;
+}
+
 interface MayarWebhookBody {
   event?: string;
-  data?: {
-    status?: unknown;
-    amount?: number;
-    customerEmail?: string;
-    transactionId?: string;
-    id?: string;
-  };
+  data?: MayarWebhookData;
+}
+
+/** Samakan format nomor HP: "+62812...", "62812...", "0812..." -> "0812..." */
+function normalizePhone(raw: string | undefined): string {
+  const digits = (raw ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("62")) return "0" + digits.slice(2);
+  if (digits.startsWith("0")) return digits;
+  return "0" + digits;
+}
+
+/**
+ * Tentukan paket dari nominal; kalau tidak persis cocok (mis. nominal sudah
+ * ditambah biaya admin/kanal yang ditanggung pembeli), cocokkan dari nama
+ * produk Mayar, mis. "PARIBAN Match Premium - 1 Bulan".
+ */
+function detectPaket(data: MayarWebhookData) {
+  const byAmount = PAKET_PREMIUM.find((p) => p.harga === data.amount);
+  if (byAmount) return byAmount;
+  const m = data.productName?.match(/(\d+)\s*bulan/i);
+  if (m) {
+    return PAKET_PREMIUM.find((p) => p.nama.toLowerCase() === `${m[1]} bulan`);
+  }
+  return undefined;
 }
 
 export async function POST(req: Request) {
@@ -64,6 +92,13 @@ export async function POST(req: Request) {
 
   console.log("Mayar webhook diterima:", body.event, JSON.stringify(body.data));
 
+  // Tombol "TEST URL" di dashboard Mayar mengirim event "testing" dengan data
+  // contoh (email & produk palsu). Cukup balas 200 supaya tes lolos — tidak
+  // ada yang diaktifkan.
+  if (body.event === "testing") {
+    return NextResponse.json({ ok: true, test: true });
+  }
+
   const data = body.data;
   if (!data || !isPaid(data.status)) {
     // Event selain pembayaran sukses (mis. payment.reminder) — abaikan
@@ -72,22 +107,29 @@ export async function POST(req: Request) {
   }
 
   const email = data.customerEmail?.trim().toLowerCase();
-  if (!email) {
-    console.error("Mayar webhook: payload tidak punya customerEmail", body);
-    return NextResponse.json({ error: "customerEmail tidak ada di payload" }, { status: 400 });
+  const phone = normalizePhone(data.customerMobile);
+  if (!email && !phone) {
+    console.error("Mayar webhook: payload tidak punya customerEmail maupun customerMobile", body);
+    return NextResponse.json({ error: "Identitas pembeli tidak ada di payload" }, { status: 400 });
   }
 
   const peserta = await loadPeserta();
-  const target = peserta.find((p) => p.email.toLowerCase() === email);
+  // Utama: email pembeli = email akun. Cadangan: nomor HP pembeli = nomor WA
+  // akun, hanya kalau tepat satu peserta yang cocok.
+  let target = email ? peserta.find((p) => p.email.toLowerCase() === email) : undefined;
+  if (!target && phone) {
+    const byPhone = peserta.filter((p) => normalizePhone(p.wa) === phone);
+    if (byPhone.length === 1) target = byPhone[0];
+  }
   if (!target) {
-    console.error(`Mayar webhook: tidak ada peserta dengan email ${email}`);
+    console.error(`Mayar webhook: tidak ada peserta dengan email ${email ?? "-"} / HP ${phone || "-"}`);
     return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
   }
 
-  const paketInfo = PAKET_PREMIUM.find((p) => p.harga === data.amount);
+  const paketInfo = detectPaket(data);
   if (!paketInfo) {
-    console.error(`Mayar webhook: nominal ${data.amount} tidak cocok paket manapun`);
-    return NextResponse.json({ error: "Nominal tidak dikenali" }, { status: 400 });
+    console.error(`Mayar webhook: nominal ${data.amount} / produk "${data.productName}" tidak cocok paket manapun`);
+    return NextResponse.json({ error: "Paket tidak dikenali" }, { status: 400 });
   }
 
   const expiry = new Date();
