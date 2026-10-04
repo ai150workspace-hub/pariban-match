@@ -33,7 +33,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 30,
     perBulan: null,
     badge: null,
-    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-1-bulan",
+    mayarLink: "https://pariban-match-60781.myr.id/pl/pariban-match-premium-1-bulan-16811",
   },
   {
     id: "3bln",
@@ -43,7 +43,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 90,
     perBulan: 16633,
     badge: null,
-    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-3-bulan",
+    mayarLink: "https://pariban-match-60781.myr.id/pl/pariban-match-premium-3-bulan-55521",
   },
   {
     id: "6bln",
@@ -53,7 +53,7 @@ export const PAKET_PREMIUM: PaketInfo[] = [
     durasiHari: 180,
     perBulan: 14983,
     badge: "Paling Hemat",
-    mayarLink: "https://pariban-match.myr.id/pl/pariban-match-premium-6-bulan",
+    mayarLink: "https://pariban-match-60781.myr.id/pl/pariban-match-premium-6-bulan-82130",
   },
 ];
 
