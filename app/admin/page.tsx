@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
+import { PembayaranPanel, type PembayaranData } from "./pembayaran-panel";
 
 // ─── Interfaces ───────────────────────────────────────────────────────
 interface PesertaData {
@@ -311,9 +312,10 @@ export default function AdminPage() {
   const [laporan, setLaporan] = useState<LaporanItem[]>([]);
   const [deletionLogs, setDeletionLogs] = useState<DeletionLogItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
+  const [pembayaran, setPembayaran] = useState<PembayaranData | null>(null);
   const [demografi, setDemografi] = useState<Demografi | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"peserta" | "matching" | "laporan" | "hapus_akun">("peserta");
+  const [tab, setTab] = useState<"peserta" | "matching" | "laporan" | "hapus_akun" | "pembayaran">("peserta");
   const [togglingKode, setTogglingKode] = useState<string | null>(null);
   const [banningKode, setBanningKode] = useState<string | null>(null);
 
@@ -376,15 +378,23 @@ export default function AdminPage() {
     setDeletionLogs(data.logs || []);
   }, [guard]);
 
+  const fetchPembayaran = useCallback(async () => {
+    const res = await fetch("/api/admin/transaksi");
+    if (!guard(res)) return;
+    const data = await res.json();
+    setPembayaran(data);
+  }, [guard]);
+
   useEffect(() => {
     if (!authed) return;
+    fetchPembayaran();
     fetchPeserta();
     fetchLaporan();
     fetchMatching();
     fetchStats();
     fetchDemografi();
     fetchDeletionLogs();
-  }, [authed, fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi, fetchDeletionLogs]);
+  }, [authed, fetchPembayaran, fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi, fetchDeletionLogs]);
 
   async function togglePremium(kode: string, current: boolean) {
     setTogglingKode(kode);
@@ -759,6 +769,15 @@ export default function AdminPage() {
                 </span>
               )}
             </button>
+            <button type="button" onClick={() => setTab("pembayaran")}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "pembayaran" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground hover:bg-secondary/80"}`}>
+              Pembayaran
+              {(pembayaran?.belumDiproses.length ?? 0) > 0 && (
+                <span className="ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {pembayaran!.belumDiproses.length}
+                </span>
+              )}
+            </button>
           </div>
 
           {/* ── Tab: Daftar Peserta ── */}
@@ -940,6 +959,15 @@ export default function AdminPage() {
                 </table>
               )}
             </div>
+          )}
+
+          {/* ── Tab: Pembayaran ── */}
+          {tab === "pembayaran" && (
+            <PembayaranPanel
+              data={pembayaran}
+              peserta={peserta.map((p) => ({ kode: p.kode, nama: p.nama, email: p.email }))}
+              onChanged={() => { fetchPembayaran(); fetchPeserta(); fetchStats(); }}
+            />
           )}
 
           {/* ── Tab: Matching ── */}

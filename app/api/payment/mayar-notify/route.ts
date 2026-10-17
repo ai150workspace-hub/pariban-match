@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
-import { loadPeserta, updatePeserta } from "@/lib/storage";
-import { sendKonfirmasiPremium } from "@/lib/email";
+import { createHash, timingSafeEqual } from "crypto";
+import { loadPeserta } from "@/lib/storage";
 import { PAKET_PREMIUM } from "@/lib/pricing";
+import {
+  simpanTransaksi,
+  updateTransaksi,
+  type TransaksiStatus,
+} from "@/lib/transaksi";
+import { aktifkanPremiumUntukTransaksi } from "@/lib/aktivasi-premium";
+
+const PROVIDER = "mayar";
 
 /**
  * Webhook Mayar.id. Daftarkan URL ini di dashboard Mayar (Integrasi →
@@ -14,6 +21,14 @@ import { PAKET_PREMIUM } from "@/lib/pricing";
  * token rahasia di query string sebagai gantinya — nilainya harus SAMA
  * persis dengan env var MAYAR_WEBHOOK_TOKEN di Vercel, dan hanya Kakak yang
  * tahu nilainya (generate sendiri, jangan tebakan).
+ *
+ * Mayar (per dokumentasi) hanya menyediakan kolom URL di dashboard — tidak
+ * ada header kustom/secret/signature — jadi token tetap di query string.
+ *
+ * Aturan penting: SETIAP payload yang lolos token disimpan ke tabel
+ * `transaksi` SEBELUM mencoba mencocokkan peserta. Pembayaran yang gagal
+ * cocok tetap tercatat dan bisa dicocokkan manual dari /admin; endpoint ini
+ * tidak lagi menjawab 404 tanpa menyimpan apa pun.
  */
 
 const WEBHOOK_TOKEN = process.env.MAYAR_WEBHOOK_TOKEN ?? "";
@@ -46,6 +61,7 @@ interface MayarWebhookData {
   productName?: string;
   transactionId?: string;
   id?: string;
+  invoiceCode?: string;
 }
 
 interface MayarWebhookBody {
@@ -92,65 +108,98 @@ export async function POST(req: Request) {
 
   console.log("Mayar webhook diterima:", body.event, JSON.stringify(body.data));
 
-  // Tombol "TEST URL" di dashboard Mayar mengirim event "testing" dengan data
-  // contoh (email & produk palsu). Cukup balas 200 supaya tes lolos — tidak
-  // ada yang diaktifkan.
-  if (body.event === "testing") {
-    return NextResponse.json({ ok: true, test: true });
+  const data = body.data;
+  const paid = !!data && isPaid(data.status);
+  const email = data?.customerEmail?.trim().toLowerCase() || undefined;
+  const phone = normalizePhone(data?.customerMobile);
+  const paketInfo = data ? detectPaket(data) : undefined;
+
+  // Kunci idempotency. Pembayaran lunas dikunci ke id transaksi Mayar; event
+  // lain (reminder, test, ...) diberi akhiran agar tidak menabrak baris
+  // pembayaran yang nanti memakai id transaksi yang sama.
+  const idDasar =
+    data?.transactionId ??
+    data?.id ??
+    `hash:${createHash("sha256").update(JSON.stringify(body)).digest("hex").slice(0, 32)}`;
+  const jenis: TransaksiStatus = body.event === "testing" ? "test" : paid ? "tidak_cocok" : "diabaikan";
+  const transactionId = paid ? idDasar : `${idDasar}#${body.event ?? "event"}`;
+
+  // 1. SIMPAN dulu, apa pun hasilnya nanti. Kalau gagal menyimpan (mis. tabel
+  //    belum dibuat) jawab 500 supaya Mayar mengirim ulang — jangan sampai
+  //    pembayaran diproses tanpa jejak.
+  let saved;
+  try {
+    saved = await simpanTransaksi({
+      provider: PROVIDER,
+      transactionId,
+      orderId: data?.invoiceCode ?? data?.id ?? null,
+      emailPembayar: data?.customerEmail ?? null,
+      nomorHpPembayar: data?.customerMobile ?? null,
+      nominal: typeof data?.amount === "number" ? data.amount : null,
+      paket: paketInfo?.id ?? null,
+      status: jenis,
+      pesertaKode: null,
+      rawPayload: body,
+      catatan: null,
+    });
+  } catch (e) {
+    console.error("Mayar webhook: GAGAL menyimpan transaksi:", e);
+    return NextResponse.json({ error: "Gagal menyimpan transaksi" }, { status: 500 });
   }
 
-  const data = body.data;
-  if (!data || !isPaid(data.status)) {
-    // Event selain pembayaran sukses (mis. payment.reminder) — abaikan
-    // tanpa error, supaya Mayar tidak retry terus-menerus.
+  if (body.event === "testing") {
+    // Tombol "TEST URL" di dashboard Mayar: cukup balas 200.
+    return NextResponse.json({ ok: true, test: true });
+  }
+  if (!paid) {
+    // Event selain pembayaran sukses (mis. payment.reminder) — sudah dicatat,
+    // balas 200 supaya Mayar tidak retry terus-menerus.
     return NextResponse.json({ ok: true, skipped: true });
   }
 
-  const email = data.customerEmail?.trim().toLowerCase();
-  const phone = normalizePhone(data.customerMobile);
+  const trx = saved.row;
+  if (trx.status === "aktif") {
+    // Notifikasi yang sama dikirim ulang — jangan ubah apa pun.
+    return NextResponse.json({ ok: true, duplicate: true });
+  }
+
+  // 2. Cocokkan peserta. Utama: email pembeli = email akun. Cadangan: nomor HP
+  //    pembeli = nomor WA akun, hanya kalau tepat satu peserta yang cocok.
+  const tandai = async (status: TransaksiStatus, catatan: string, pesertaKode: string | null = null) => {
+    await updateTransaksi(trx.id, { status, catatan, pesertaKode }).catch((e) =>
+      console.error("Mayar webhook: gagal memperbarui status transaksi:", e),
+    );
+  };
+
   if (!email && !phone) {
-    console.error("Mayar webhook: payload tidak punya customerEmail maupun customerMobile", body);
-    return NextResponse.json({ error: "Identitas pembeli tidak ada di payload" }, { status: 400 });
+    await tandai("tidak_cocok", "Payload tidak punya email maupun nomor HP pembeli");
+    return NextResponse.json({ ok: true, matched: false });
   }
 
   const peserta = await loadPeserta();
-  // Utama: email pembeli = email akun. Cadangan: nomor HP pembeli = nomor WA
-  // akun, hanya kalau tepat satu peserta yang cocok.
   let target = email ? peserta.find((p) => p.email.toLowerCase() === email) : undefined;
   if (!target && phone) {
     const byPhone = peserta.filter((p) => normalizePhone(p.wa) === phone);
     if (byPhone.length === 1) target = byPhone[0];
   }
   if (!target) {
-    console.error(`Mayar webhook: tidak ada peserta dengan email ${email ?? "-"} / HP ${phone || "-"}`);
-    return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
+    console.error(`Mayar webhook: tidak ada peserta dengan email ${email ?? "-"} / HP ${phone || "-"} (tersimpan sebagai transaksi ${trx.id})`);
+    await tandai("tidak_cocok", "Email/HP pembayar tidak cocok dengan peserta manapun");
+    return NextResponse.json({ ok: true, matched: false });
   }
 
-  const paketInfo = detectPaket(data);
   if (!paketInfo) {
-    console.error(`Mayar webhook: nominal ${data.amount} / produk "${data.productName}" tidak cocok paket manapun`);
-    return NextResponse.json({ error: "Paket tidak dikenali" }, { status: 400 });
+    console.error(`Mayar webhook: nominal ${data?.amount} / produk "${data?.productName}" tidak cocok paket manapun (transaksi ${trx.id})`);
+    await tandai("paket_tidak_dikenal", "Nominal/nama produk tidak cocok paket manapun", target.kode);
+    return NextResponse.json({ ok: true, matched: true, activated: false });
   }
 
-  const expiry = new Date();
-  expiry.setDate(expiry.getDate() + paketInfo.durasiHari);
-  const expiryISO = expiry.toISOString();
-
+  // 3. Aktifkan (idempotent: klaim bersyarat di tabel transaksi).
   try {
-    await updatePeserta(target.kode, {
-      premium: true,
-      premiumExpiry: expiryISO,
-      premiumPaket: paketInfo.id,
-    });
-    console.log(`Premium aktif untuk ${target.kode} via Mayar (${paketInfo.id}), expiry: ${expiryISO}`);
+    const hasil = await aktifkanPremiumUntukTransaksi(trx, target, paketInfo);
+    return NextResponse.json({ ok: true, ...(hasil === "duplikat" && { duplicate: true }) });
   } catch (e) {
-    console.error("Mayar webhook: gagal update peserta:", e);
+    console.error("Mayar webhook: gagal mengaktifkan premium:", e);
     return NextResponse.json({ error: "Gagal update peserta" }, { status: 500 });
   }
-
-  sendKonfirmasiPremium(target, paketInfo.id, expiry).catch((e) =>
-    console.error(`Gagal kirim email premium ke ${target.kode}:`, e),
-  );
-
-  return NextResponse.json({ ok: true });
 }

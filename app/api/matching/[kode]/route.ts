@@ -78,6 +78,9 @@ export async function GET(
     peserta: {
       kode: target.kode,
       inisial: target.inisial,
+      // Email milik peserta itu sendiri (endpoint ini hanya untuk pemilik/admin);
+      // dipakai modal pembayaran untuk mengingatkan memakai email yang sama.
+      email: target.email,
       marga: target.marga,
       margaIbu: target.margaIbu,
       gender: target.gender,

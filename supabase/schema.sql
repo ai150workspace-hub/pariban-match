@@ -127,3 +127,37 @@ ALTER TABLE deletion_logs DISABLE ROW LEVEL SECURITY;
 -- ubah manual: Storage → pariban-photos → Settings → matikan
 -- "Public bucket".
 -- ================================================================
+
+-- ================================================================
+-- Tabel transaksi — jejak SEMUA notifikasi webhook pembayaran
+-- (Mayar dan, kelak, penyedia lain), termasuk yang gagal dicocokkan
+-- ke peserta. Dipakai juga untuk idempotency: pasangan
+-- (provider, transaction_id) unik, jadi notifikasi yang dikirim ulang
+-- tidak bisa mengaktifkan/memperpanjang Premium dua kali.
+-- Sengaja TIDAK punya foreign key ke peserta(kode): baris ini harus
+-- tetap ada walau peserta dihapus atau belum pernah cocok (NULL).
+--
+-- status: test | diabaikan | tidak_cocok | paket_tidak_dikenal | gagal | aktif
+-- ================================================================
+
+CREATE TABLE IF NOT EXISTS transaksi (
+  id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  provider          TEXT NOT NULL,
+  transaction_id    TEXT NOT NULL,
+  order_id          TEXT,
+  email_pembayar    TEXT,
+  nomor_hp_pembayar TEXT,
+  nominal           INTEGER,
+  paket             TEXT,
+  status            TEXT NOT NULL,
+  peserta_kode      TEXT,
+  raw_payload       JSONB,
+  catatan           TEXT,
+  dicocokkan_oleh   TEXT,
+  dicocokkan_pada   TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (provider, transaction_id)
+);
+CREATE INDEX IF NOT EXISTS idx_transaksi_status ON transaksi (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_transaksi_peserta ON transaksi (peserta_kode);
+ALTER TABLE transaksi DISABLE ROW LEVEL SECURITY;

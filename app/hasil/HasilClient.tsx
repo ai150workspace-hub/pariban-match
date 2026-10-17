@@ -114,6 +114,7 @@ interface PesertaInfo {
   fotoUrl: string | null;
   fotoCount: number;
   fotoLiveVerified: boolean;
+  email?: string;
   trialEndsAt: string | null;
   premium: boolean;
   premiumExpiry: string | null;
@@ -913,6 +914,17 @@ export default function HasilClient({ kode }: { kode: string }) {
                 <h3 className="font-heading text-xl font-bold text-foreground">Pilih Paket Premium</h3>
                 <p className="mt-1 text-sm text-muted-foreground mb-5">Akses penuh semua hasil matching tanpa batas</p>
               </>
+            )}
+
+            {peserta.email && (
+              <div
+                role="note"
+                className="mb-4 rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground"
+              >
+                Gunakan email ini saat membayar:{" "}
+                <strong className="break-words">{peserta.email}</strong>. Pembayaran dengan email
+                berbeda tidak akan otomatis mengaktifkan Premium.
+              </div>
             )}
 
             <div className={`space-y-3 ${trialExpired ? "" : "mt-0"}`}>

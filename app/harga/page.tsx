@@ -93,6 +93,13 @@ export default function HargaPage() {
                 </li>
               ))}
             </ul>
+            <p
+              role="note"
+              className="mt-4 rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground"
+            >
+              <strong>Gunakan email yang sama dengan email akun PARIBAN kamu saat membayar.</strong>{" "}
+              Pembayaran dengan email berbeda tidak akan otomatis mengaktifkan Premium.
+            </p>
             <p className="mt-3 text-xs text-muted-foreground">
               Pembayaran diproses lewat Midtrans, penyedia payment gateway resmi berizin Bank Indonesia.
             </p>

@@ -43,3 +43,22 @@ export function newTrialExpiry(): string {
   d.setDate(d.getDate() + TRIAL_DURASI_HARI);
   return d.toISOString();
 }
+
+/**
+ * Tanggal berakhir Premium setelah membeli paket `durasiHari`. Kalau peserta
+ * MASIH punya sisa masa aktif, durasi paket DITAMBAHKAN ke tanggal berakhir
+ * yang ada (sisa 20 hari + paket 30 hari = 50 hari), bukan dihitung ulang
+ * dari sekarang. Premium tanpa tanggal berakhir (diberi manual oleh admin)
+ * dianggap tidak punya sisa yang bisa ditambahkan, jadi hitungannya dari `now`.
+ */
+export function hitungExpiryPremiumBaru(
+  p: Pick<Peserta, "premium" | "premiumExpiry">,
+  durasiHari: number,
+  now: Date = new Date(),
+): Date {
+  const sisaSampai = p.premium && p.premiumExpiry ? new Date(p.premiumExpiry) : null;
+  const dasar = sisaSampai && sisaSampai > now ? sisaSampai : now;
+  const hasil = new Date(dasar);
+  hasil.setDate(hasil.getDate() + durasiHari);
+  return hasil;
+}
