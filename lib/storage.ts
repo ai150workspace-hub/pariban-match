@@ -155,11 +155,22 @@ async function sbUpdate(kode: string, updates: Partial<Peserta>): Promise<void> 
   if (error) throw new Error(error.message);
 }
 
+/** Kode berikutnya = angka terbesar yang ada + 1 (bukan jumlah baris, supaya
+ * tidak bentrok setelah ada peserta yang dihapus). */
+export function nextKodeFrom(kodes: string[]): string {
+  let max = 0;
+  for (const k of kodes) {
+    const m = /^P(\d+)$/.exec(k);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return `P${String(max + 1).padStart(3, "0")}`;
+}
+
 async function sbNextKode(): Promise<string> {
   const { getSupabase } = await import("./supabase");
-  const { count } = await getSupabase()
-    .from("peserta").select("*", { count: "exact", head: true });
-  return `P${String((count ?? 0) + 1).padStart(3, "0")}`;
+  const { data, error } = await getSupabase().from("peserta").select("kode");
+  if (error) throw new Error(error.message);
+  return nextKodeFrom((data as { kode: string }[]).map((r) => r.kode));
 }
 
 async function sbDelete(kode: string): Promise<void> {
@@ -186,7 +197,7 @@ export async function addPeserta(p: Peserta): Promise<Peserta> {
     return saved;
   }
   const list = await fileLoad();
-  const kode = `P${String(list.length + 1).padStart(3, "0")}`;
+  const kode = nextKodeFrom(list.map((x) => x.kode));
   const peserta: Peserta = { ...p, kode };
   list.push(peserta);
   await fileSave(list);

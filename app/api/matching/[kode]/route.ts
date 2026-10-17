@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
 import { hitungPasangan, topTiga, skorPasangan, gerbangAdat } from "@/lib/adat";
+import { canActAs, forbidden } from "@/lib/request-auth";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+  if (!(await canActAs(kode))) return forbidden();
   const peserta = await loadPeserta();
   const target = peserta.find((p) => p.kode === kode);
 

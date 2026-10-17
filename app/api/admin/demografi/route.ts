@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
+import { isAdminRequest, forbidden } from "@/lib/request-auth";
 
 export async function GET() {
+  if (!(await isAdminRequest())) return forbidden();
   const peserta = await loadPeserta();
   const tahun = new Date().getFullYear();
 

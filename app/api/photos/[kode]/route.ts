@@ -5,6 +5,7 @@ import { join } from "path";
 import { existsSync } from "fs";
 import { updatePeserta } from "@/lib/storage";
 import { ADMIN_COOKIE_NAME, isValidAdminToken } from "@/lib/admin-token";
+import { canActAs, forbidden } from "@/lib/request-auth";
 
 const PHOTOS_DIR = join(process.cwd(), ".data", "photos");
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -61,6 +62,7 @@ export async function POST(
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+  if (!(await canActAs(kode))) return forbidden();
 
   let formData: FormData;
   try {
@@ -132,6 +134,7 @@ export async function DELETE(
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+  if (!(await canActAs(kode))) return forbidden();
   const url = new URL(req.url);
   const index = url.searchParams.get("index");
   const prefix = index ? `${kode}_${index}` : kode;

@@ -323,50 +323,68 @@ export default function AdminPage() {
     setCheckingAuth(false);
   }, []);
 
+  // Sesi lama (hanya flag sessionStorage, tanpa cookie admin) ditolak server
+  // dengan 403 -> kembali ke form login supaya cookie admin dibuat ulang.
+  const guard = useCallback((res: Response): boolean => {
+    if (res.status === 403) {
+      sessionStorage.removeItem("admin_auth");
+      setAuthed(false);
+      return false;
+    }
+    return res.ok;
+  }, []);
+
   const fetchPeserta = useCallback(async () => {
     const res = await fetch("/api/peserta");
+    if (!guard(res)) return;
     const data = await res.json();
     setPeserta(data.peserta || []);
-  }, []);
+  }, [guard]);
 
   const fetchLaporan = useCallback(async () => {
     const res = await fetch("/api/admin/laporan");
+    if (!guard(res)) return;
     const data = await res.json();
     setLaporan(data.laporan || []);
-  }, []);
+  }, [guard]);
 
   const fetchMatching = useCallback(async () => {
     const res = await fetch("/api/matching");
+    if (!guard(res)) return;
     const data = await res.json();
     setMatching(data);
-  }, []);
+  }, [guard]);
 
   const fetchStats = useCallback(async () => {
     const res = await fetch("/api/admin/stats");
+    if (!guard(res)) return;
     const data = await res.json();
     setStats(data);
-  }, []);
+  }, [guard]);
 
   const fetchDemografi = useCallback(async () => {
     const res = await fetch("/api/admin/demografi");
+    if (!guard(res)) return;
     const data = await res.json();
     setDemografi(data);
-  }, []);
+  }, [guard]);
 
   const fetchDeletionLogs = useCallback(async () => {
     const res = await fetch("/api/admin/deletion-logs");
+    if (!guard(res)) return;
     const data = await res.json();
     setDeletionLogs(data.logs || []);
-  }, []);
+  }, [guard]);
 
   useEffect(() => {
+    if (!authed) return;
     fetchPeserta();
     fetchLaporan();
     fetchMatching();
     fetchStats();
     fetchDemografi();
     fetchDeletionLogs();
-  }, [fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi, fetchDeletionLogs]);
+  }, [authed, fetchPeserta, fetchLaporan, fetchMatching, fetchStats, fetchDemografi, fetchDeletionLogs]);
 
   async function togglePremium(kode: string, current: boolean) {
     setTogglingKode(kode);

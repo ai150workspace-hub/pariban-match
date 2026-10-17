@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updatePeserta, deletePeserta, loadPeserta } from "@/lib/storage";
 import { logDeletion } from "@/lib/deletion-log";
+import { canActAs, isAdminRequest, forbidden } from "@/lib/request-auth";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const PHOTO_EXTS = ["jpg", "jpeg", "png", "webp"];
@@ -11,6 +12,9 @@ export async function PATCH(
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+  // Mengubah status premium hanya hak admin (peserta tidak boleh memberi
+  // dirinya sendiri premium). Aktivasi otomatis lewat webhook Mayar.
+  if (!(await isAdminRequest())) return forbidden();
 
   let body: { premium?: boolean };
   try {
@@ -36,6 +40,7 @@ export async function DELETE(
   { params }: { params: Promise<{ kode: string }> },
 ) {
   const { kode } = await params;
+  if (!(await canActAs(kode))) return forbidden();
 
   let body: { alasan?: string; catatanLainnya?: string };
   try {

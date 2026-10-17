@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { isAdminRequest, forbidden } from "@/lib/request-auth";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 
 export async function GET() {
+  if (!(await isAdminRequest())) return forbidden();
   if (!USE_SUPABASE) {
     return NextResponse.json({ laporan: [] });
   }
@@ -22,6 +24,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
+  if (!(await isAdminRequest())) return forbidden();
   if (!USE_SUPABASE) {
     return NextResponse.json({ error: "Supabase tidak aktif" }, { status: 503 });
   }

@@ -5,10 +5,18 @@ import type { Peserta } from "@/lib/adat/types";
 import { sendKonfirmasiDaftar } from "@/lib/email";
 import { hashPassword } from "@/lib/hash";
 import { newTrialExpiry } from "@/lib/membership";
+import { isAdminRequest, forbidden } from "@/lib/request-auth";
 
 export async function GET() {
+  if (!(await isAdminRequest())) return forbidden();
   const list = await loadPeserta();
-  return NextResponse.json({ count: list.length, peserta: list });
+  // passwordHash tidak pernah dikirim ke klien, bahkan untuk admin.
+  const peserta = list.map((p) => {
+    const copy = { ...p };
+    delete copy.passwordHash;
+    return copy;
+  });
+  return NextResponse.json({ count: peserta.length, peserta });
 }
 
 export async function POST(req: Request) {
