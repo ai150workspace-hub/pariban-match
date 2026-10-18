@@ -43,9 +43,18 @@ export async function GET(
     .eq("percakapan_id", id)
     .order("created_at", { ascending: true });
 
+  // Hanya nama tampilan (inisial) lawan bicara — bukan nama lengkap, marga,
+  // email, nomor HP, atau foto. null kalau akunnya sudah tidak ada.
+  const { data: lawan } = await sb
+    .from("peserta")
+    .select("inisial")
+    .eq("kode", lawanKode)
+    .maybeSingle();
+
   return NextResponse.json({
     id: conv.id,
     lawanKode,
+    lawanInisial: (lawan?.inisial as string | undefined) || null,
     dilaporkan: conv.dilaporkan,
     pesan: pesan ?? [],
   });

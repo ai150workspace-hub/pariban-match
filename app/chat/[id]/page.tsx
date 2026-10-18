@@ -14,6 +14,7 @@ interface Pesan {
 interface ChatData {
   id: string;
   lawanKode: string;
+  lawanInisial?: string | null;
   dilaporkan: boolean;
   pesan: Pesan[];
 }
@@ -159,6 +160,9 @@ export default function ChatPage() {
     );
   }
 
+  // Nama tampilan lawan bicara; kalau kosong tampilkan "Peserta", bukan kode.
+  const namaLawan = chat.lawanInisial?.trim() || "Peserta";
+
   // Kelompokkan pesan per tanggal
   const grouped: { tanggal: string; pesan: Pesan[] }[] = [];
   for (const p of chat.pesan) {
@@ -213,10 +217,10 @@ export default function ChatPage() {
           ←
         </Link>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
-          {chat.lawanKode.charAt(0)}
+          {namaLawan.charAt(0)}
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-foreground">{chat.lawanKode}</p>
+          <p className="text-sm font-semibold text-foreground">{namaLawan}</p>
           <p className="text-xs text-muted-foreground">SALING COCOK ♥</p>
         </div>
         <div className="flex items-center gap-2">
@@ -245,7 +249,7 @@ export default function ChatPage() {
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="text-3xl mb-3">💬</div>
             <p className="text-sm font-medium text-foreground">Mulai percakapan!</p>
-            <p className="mt-1 text-xs text-muted-foreground">Kirim pesan pertamamu ke {chat.lawanKode}</p>
+            <p className="mt-1 text-xs text-muted-foreground">Kirim pesan pertamamu ke {namaLawan}</p>
           </div>
         ) : (
           <div className="space-y-4">
