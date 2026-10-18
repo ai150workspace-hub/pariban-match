@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getKodeSesi } from "@/lib/request-auth";
 import { loadPeserta } from "@/lib/storage";
+import { hasActiveAccess } from "@/lib/membership";
+import { salingCocok } from "@/lib/matching-check";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 
@@ -51,8 +53,26 @@ export async function POST(req: Request) {
     .limit(1)
     .single();
 
+  // Percakapan yang sudah ada selalu boleh dibuka (dibaca) oleh anggotanya.
   if (existing) {
     return NextResponse.json({ id: existing.id });
+  }
+
+  // Percakapan BARU: pemanggil harus punya akses aktif (trial/premium berjalan)
+  // dan kedua pihak harus saling cocok — keduanya diperiksa di server, tidak
+  // dipercaya dari tampilan klien.
+  const saya = list.find((p) => p.kode === kode);
+  if (!saya || !hasActiveAccess(saya)) {
+    return NextResponse.json(
+      { error: "Masa trial atau langgananmu sudah berakhir. Pilih paket premium untuk memulai percakapan baru." },
+      { status: 403 },
+    );
+  }
+  if (!salingCocok(list, kode, lawanKode)) {
+    return NextResponse.json(
+      { error: "Kamu dan peserta ini tidak (lagi) saling cocok, jadi percakapan belum bisa dimulai." },
+      { status: 403 },
+    );
   }
 
   // Buat baru (peserta_a selalu yang lebih kecil secara alfabet agar konsisten)

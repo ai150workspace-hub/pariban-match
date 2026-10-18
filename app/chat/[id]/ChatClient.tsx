@@ -14,6 +14,7 @@ interface ChatData {
   id: string;
   lawanKode: string;
   lawanInisial?: string | null;
+  bisaKirim?: boolean;
   dilaporkan: boolean;
   pesan: Pesan[];
 }
@@ -281,6 +282,17 @@ export default function ChatClient({ id, kode }: { id: string; kode: string }) {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-4 py-3">
+        {chat.bisaKirim === false ? (
+          <div role="note" className="rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground">
+            <p>
+              Masa trial atau langgananmu sudah berakhir. Kamu masih bisa membaca
+              percakapan ini, tetapi mengirim pesan baru memerlukan paket premium.
+            </p>
+            <Link href="/hasil" className="mt-2 inline-block font-semibold text-primary hover:underline">
+              Pilih paket →
+            </Link>
+          </div>
+        ) : (<>
         <div className="flex items-end gap-3">
           <textarea
             value={isi}
@@ -307,6 +319,7 @@ export default function ChatClient({ id, kode }: { id: string; kode: string }) {
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground">
           Enter untuk kirim · Shift+Enter untuk baris baru
         </p>
+        </>)}
       </div>
     </div>
   );

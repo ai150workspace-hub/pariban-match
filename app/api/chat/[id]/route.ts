@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
 import { sendNotifikasiPesan } from "@/lib/email";
 import { getKodeSesi } from "@/lib/request-auth";
+import { hasActiveAccess } from "@/lib/membership";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -53,10 +54,27 @@ export async function GET(
     .eq("kode", lawanKode)
     .maybeSingle();
 
+  // Membaca percakapan selalu boleh; mengirim pesan butuh akses aktif.
+  // Dikirim ke klien hanya supaya kotak ketik bisa dinonaktifkan dengan penjelasan —
+  // penegakannya tetap di POST di bawah.
+  const { data: sayaRow } = await sb
+    .from("peserta")
+    .select("trial_ends_at, premium, premium_expiry")
+    .eq("kode", kode)
+    .maybeSingle();
+  const bisaKirim =
+    !!sayaRow &&
+    hasActiveAccess({
+      trialEndsAt: sayaRow.trial_ends_at ?? undefined,
+      premium: sayaRow.premium ?? undefined,
+      premiumExpiry: sayaRow.premium_expiry ?? undefined,
+    });
+
   return NextResponse.json({
     id: conv.id,
     lawanKode,
     lawanInisial: (lawan?.inisial as string | undefined) || null,
+    bisaKirim,
     dilaporkan: conv.dilaporkan,
     pesan: pesan ?? [],
   });
@@ -106,6 +124,16 @@ export async function POST(
     return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
   }
 
+  // Mengirim pesan baru butuh trial/premium berjalan (membaca tidak).
+  const semua = await loadPeserta();
+  const saya = semua.find((p) => p.kode === kode);
+  if (!saya || !hasActiveAccess(saya)) {
+    return NextResponse.json(
+      { error: "Masa trial atau langgananmu sudah berakhir. Kamu masih bisa membaca percakapan ini, tetapi mengirim pesan baru memerlukan paket premium." },
+      { status: 403 },
+    );
+  }
+
   const { data: pesan, error: pesanErr } = await sb
     .from("pesan")
     .insert({ percakapan_id: id, pengirim: kode, isi: isi.trim() })
@@ -122,15 +150,12 @@ export async function POST(
   // Tanpa ?kode= — penerima masuk lewat sesinya; kalau belum login diarahkan ke /masuk lalu kembali ke chat.
   const chatUrl = `${BASE_URL}/chat/${id}`;
 
-  loadPeserta()
-    .then((list) => {
-      const pengirim = list.find((p) => p.kode === kode);
-      const penerima = list.find((p) => p.kode === penerimakode);
-      if (pengirim && penerima) {
-        return sendNotifikasiPesan(penerima, pengirim.inisial, chatUrl);
-      }
-    })
-    .catch((e) => console.error("Gagal kirim notifikasi pesan:", e));
+  const penerima = semua.find((p) => p.kode === penerimakode);
+  if (penerima) {
+    sendNotifikasiPesan(penerima, saya.inisial, chatUrl).catch((e) =>
+      console.error("Gagal kirim notifikasi pesan:", e),
+    );
+  }
 
   return NextResponse.json({ pesan });
 }
