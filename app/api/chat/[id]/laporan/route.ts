@@ -45,10 +45,12 @@ export async function POST(
     return NextResponse.json({ error: "Akses ditolak" }, { status: 403 });
   }
 
-  const dilaporkan_kode = conv.peserta_a === kode ? conv.peserta_b : conv.peserta_a;
+  // Catat laporan TANPA mengubah peserta_a/peserta_b: keduanya tetap anggota
+  // percakapan. Yang dilaporkan = anggota yang bukan pelapor (diturunkan dari
+  // peserta_a/b + pelapor_kode, mis. di panel admin).
   const { error: updateErr } = await sb
     .from("percakapan")
-    .update({ dilaporkan: true, alasan_laporan: alasan.trim(), pelapor_kode: kode, peserta_b: dilaporkan_kode })
+    .update({ dilaporkan: true, alasan_laporan: alasan.trim(), pelapor_kode: kode })
     .eq("id", id);
 
   if (updateErr) {
