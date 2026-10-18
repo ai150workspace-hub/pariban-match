@@ -767,14 +767,14 @@ export default function HasilClient({ kode }: { kode: string }) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kode, lawanKode }),
+        body: JSON.stringify({ lawanKode }),
       });
       const result = await res.json();
       if (!res.ok) {
         setChatError(result.error || "Gagal membuka chat");
         return;
       }
-      router.push(`/chat/${result.id}?kode=${kode}`);
+      router.push(`/chat/${result.id}`);
     } catch {
       setChatError("Gagal menghubungi server chat.");
     } finally {

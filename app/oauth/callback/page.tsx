@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { saveOauthPrefill } from "@/lib/oauth-prefill";
+import { safeNext } from "@/lib/safe-next";
 
 function OAuthCallbackInner() {
   const { data: session, status } = useSession();
@@ -37,7 +38,7 @@ function OAuthCallbackInner() {
       .then((res) => res.json().then((data) => ({ ok: res.ok, status: res.status, data })))
       .then(({ ok, status, data }) => {
         if (ok && data.kode) {
-          router.replace("/hasil");
+          router.replace(safeNext(params.get("next")) ?? "/hasil");
         } else if (status !== 404) {
           setErr(data.error || "Login tidak berhasil. Silakan coba lagi.");
         } else {

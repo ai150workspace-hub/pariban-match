@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { safeNext } from "@/lib/safe-next";
 
 const REMEMBER_KEY = "pariban_remembered_email";
 
@@ -35,8 +36,10 @@ const FacebookIcon = () => (
   </svg>
 );
 
-export default function MasukPage() {
+function MasukForm() {
   const router = useRouter();
+  // Tujuan setelah login (mis. tautan chat dari email); hanya /chat/<uuid> yang lolos whitelist.
+  const next = safeNext(useSearchParams().get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +83,7 @@ export default function MasukPage() {
         localStorage.removeItem(REMEMBER_KEY);
       }
 
-      router.push("/hasil");
+      router.push(next ?? "/hasil");
     } catch {
       setError("Gagal menghubungi server. Periksa koneksi internetmu.");
     } finally {
@@ -92,7 +95,9 @@ export default function MasukPage() {
     setOauthLoading(provider);
     setError("");
     try {
-      await signIn(provider, { callbackUrl: "/oauth/callback" });
+      await signIn(provider, {
+        callbackUrl: next ? `/oauth/callback?next=${encodeURIComponent(next)}` : "/oauth/callback",
+      });
     } catch {
       setError("Gagal memulai login. Coba lagi.");
       setOauthLoading(null);
@@ -244,5 +249,14 @@ export default function MasukPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MasukPage() {
+  // useSearchParams memerlukan Suspense saat build.
+  return (
+    <Suspense fallback={null}>
+      <MasukForm />
+    </Suspense>
   );
 }

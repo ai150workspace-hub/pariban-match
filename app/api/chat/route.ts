@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getKodeSesi } from "@/lib/request-auth";
+import { loadPeserta } from "@/lib/storage";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 
@@ -10,16 +12,30 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { kode: string; lawanKode: string };
+  // Pembuat percakapan = pemilik sesi terverifikasi; kode dari klien diabaikan,
+  // jadi tidak ada lagi percakapan antara dua kode sembarang.
+  const kode = await getKodeSesi();
+  if (!kode) return NextResponse.json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 });
+
+  let body: { lawanKode: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { kode, lawanKode } = body;
-  if (!kode || !lawanKode) {
-    return NextResponse.json({ error: "kode dan lawanKode diperlukan" }, { status: 400 });
+  const { lawanKode } = body;
+  // Format dicek ketat: nilai ini dimasukkan ke filter PostgREST di bawah.
+  if (typeof lawanKode !== "string" || !/^P\d{1,9}$/.test(lawanKode)) {
+    return NextResponse.json({ error: "lawanKode tidak valid" }, { status: 400 });
+  }
+  if (lawanKode === kode) {
+    return NextResponse.json({ error: "Tidak bisa memulai percakapan dengan diri sendiri" }, { status: 400 });
+  }
+  const list = await loadPeserta();
+  const lawan = list.find((p) => p.kode === lawanKode);
+  if (!lawan || lawan.banned) {
+    return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
   }
 
   const { getSupabase } = await import("@/lib/supabase");

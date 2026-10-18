@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getKodeSesi } from "@/lib/request-auth";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 
@@ -11,17 +12,20 @@ export async function POST(
   }
 
   const { id } = await params;
+  // Identitas dari sesi bertanda tangan — kode dari query/body diabaikan.
+  const kode = await getKodeSesi();
+  if (!kode) return NextResponse.json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 });
 
-  let body: { kode: string; alasan: string };
+  let body: { alasan: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { kode, alasan } = body;
-  if (!kode || !alasan?.trim()) {
-    return NextResponse.json({ error: "kode dan alasan diperlukan" }, { status: 400 });
+  const { alasan } = body;
+  if (!alasan?.trim()) {
+    return NextResponse.json({ error: "alasan diperlukan" }, { status: 400 });
   }
 
   const { getSupabase } = await import("@/lib/supabase");

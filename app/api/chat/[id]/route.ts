@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
 import { sendNotifikasiPesan } from "@/lib/email";
+import { getKodeSesi } from "@/lib/request-auth";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!USE_SUPABASE) {
@@ -14,8 +15,9 @@ export async function GET(
   }
 
   const { id } = await params;
-  const kode = new URL(req.url).searchParams.get("kode");
-  if (!kode) return NextResponse.json({ error: "kode diperlukan" }, { status: 400 });
+  // Identitas dari sesi bertanda tangan — kode dari query/body diabaikan.
+  const kode = await getKodeSesi();
+  if (!kode) return NextResponse.json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 });
 
   const { getSupabase } = await import("@/lib/supabase");
   const sb = getSupabase();
@@ -70,16 +72,20 @@ export async function POST(
 
   const { id } = await params;
 
-  let body: { kode: string; isi: string };
+  // Identitas dari sesi bertanda tangan — kode dari query/body diabaikan.
+  const kode = await getKodeSesi();
+  if (!kode) return NextResponse.json({ error: "Sesi berakhir, silakan masuk lagi." }, { status: 401 });
+
+  let body: { isi: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { kode, isi } = body;
-  if (!kode || !isi?.trim()) {
-    return NextResponse.json({ error: "kode dan isi diperlukan" }, { status: 400 });
+  const { isi } = body;
+  if (!isi?.trim()) {
+    return NextResponse.json({ error: "isi diperlukan" }, { status: 400 });
   }
 
   const { getSupabase } = await import("@/lib/supabase");
@@ -113,7 +119,8 @@ export async function POST(
 
   // Notifikasi email ke penerima (fire-and-forget)
   const penerimakode = conv.peserta_a === kode ? conv.peserta_b : conv.peserta_a;
-  const chatUrl = `${BASE_URL}/chat/${id}?kode=${penerimakode}`;
+  // Tanpa ?kode= — penerima masuk lewat sesinya; kalau belum login diarahkan ke /masuk lalu kembali ke chat.
+  const chatUrl = `${BASE_URL}/chat/${id}`;
 
   loadPeserta()
     .then((list) => {
