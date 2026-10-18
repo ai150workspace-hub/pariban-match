@@ -3,7 +3,35 @@ import type { Peserta } from "./adat/types";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.EMAIL_FROM ?? "PARIBAN <noreply@pariban.id>";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
+// ── Pengiriman + pencatatan error ──
+
+function samarkan(email: string): string {
+  const [nama, domain] = email.split("@");
+  return `${nama.slice(0, 2)}***@${domain ?? "?"}`;
+}
+
+/**
+ * Kirim lewat Resend DAN periksa hasilnya. Resend tidak melempar error saat
+ * gagal (mis. domain pengirim belum terverifikasi, API key salah, penerima
+ * ditolak pada mode uji) — ia mengembalikan { error }. Tanpa pemeriksaan ini
+ * kegagalan terlihat seperti sukses. Di sini setiap kegagalan dicatat ke log
+ * server lengkap dengan pengirim yang dipakai, lalu dilempar ke pemanggil.
+ */
+async function kirimEmail(
+  msg: { to: string; subject: string; html: string },
+  jenis: string,
+): Promise<void> {
+  const { error } = await resend.emails.send({ from: FROM, ...msg });
+  if (error) {
+    console.error(
+      `[email] GAGAL kirim "${jenis}" ke ${samarkan(msg.to)} dari "${FROM}": ` +
+        `${error.name} (${"statusCode" in error ? error.statusCode : "?"}) ${error.message}`,
+    );
+    throw new Error(`Resend: ${error.message}`);
+  }
+}
 
 // ── Template dasar ──
 
@@ -81,12 +109,10 @@ export async function sendKonfirmasiDaftar(peserta: Peserta): Promise<void> {
     </p>
   `;
 
-  await resend.emails.send({
-    from: FROM,
-    to: peserta.email,
-    subject: `Kode Peserta PARIBAN Anda: ${peserta.kode}`,
-    html: wrap("Konfirmasi Pendaftaran PARIBAN", content),
-  });
+  await kirimEmail(
+    { to: peserta.email, subject: `Kode Peserta PARIBAN Anda: ${peserta.kode}`, html: wrap("Konfirmasi Pendaftaran PARIBAN", content) },
+    "konfirmasi pendaftaran",
+  );
 }
 
 // ── Email 2: Hasil Matching ──
@@ -162,12 +188,10 @@ export async function sendHasilMatching(
     </p>
   `;
 
-  await resend.emails.send({
-    from: FROM,
-    to: peserta.email,
-    subject: `Hasil Pencocokan PARIBAN ${peserta.kode} Sudah Siap!`,
-    html: wrap("Hasil Pencocokan PARIBAN", content),
-  });
+  await kirimEmail(
+    { to: peserta.email, subject: `Hasil Pencocokan PARIBAN ${peserta.kode} Sudah Siap!`, html: wrap("Hasil Pencocokan PARIBAN", content) },
+    "hasil pencocokan",
+  );
 }
 
 // ── Email 3: Konfirmasi Premium ──
@@ -207,12 +231,10 @@ export async function sendKonfirmasiPremium(
     ${btn(hasilUrl, "Lihat Hasil Tanpa Blur →")}
   `;
 
-  await resend.emails.send({
-    from: FROM,
-    to: peserta.email,
-    subject: "PARIBAN Premium Aktif — Selamat!",
-    html: wrap("PARIBAN Premium Aktif", content),
-  });
+  await kirimEmail(
+    { to: peserta.email, subject: "PARIBAN Premium Aktif — Selamat!", html: wrap("PARIBAN Premium Aktif", content) },
+    "premium aktif",
+  );
 }
 
 // ── Email 4: Notifikasi Pesan Baru ──
@@ -241,10 +263,59 @@ export async function sendNotifikasiPesan(
     </p>
   `;
 
-  await resend.emails.send({
-    from: FROM,
-    to: penerima.email,
-    subject: `Pesan baru dari ${pengirimInisial} di PARIBAN`,
-    html: wrap("Pesan Baru di PARIBAN", content),
-  });
+  await kirimEmail(
+    { to: penerima.email, subject: `Pesan baru dari ${pengirimInisial} di PARIBAN`, html: wrap("Pesan Baru di PARIBAN", content) },
+    "notifikasi pesan",
+  );
+}
+
+// ── Email 5: Reset Password ──
+
+export async function sendResetPassword(peserta: Peserta, resetUrl: string): Promise<void> {
+  const content = `
+    <p style="margin:0 0 8px;color:#7A1F2A;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Reset Password</p>
+    <h1 style="margin:0 0 16px;color:#1A1A1A;font-size:24px;font-family:Georgia,serif;">Atur password baru</h1>
+    <p style="margin:0 0 20px;color:#555;font-size:15px;line-height:1.6;">
+      Halo ${peserta.inisial}, kami menerima permintaan untuk mengatur ulang password akun PARIBAN Anda.
+      Klik tombol di bawah untuk membuat password baru.
+    </p>
+
+    ${btn(resetUrl, "Atur Password Baru →")}
+
+    <p style="margin:24px 0 0;color:#888;font-size:13px;line-height:1.6;">
+      Tautan ini berlaku <strong>1 jam</strong> dan hanya bisa dipakai sekali. Jika Anda tidak meminta reset password,
+      abaikan email ini — password Anda tidak berubah.
+    </p>
+  `;
+
+  await kirimEmail(
+    { to: peserta.email, subject: "Reset password PARIBAN", html: wrap("Reset Password PARIBAN", content) },
+    "reset password",
+  );
+}
+
+// ── Email 6: Akun masuk lewat Google/Facebook (tanpa password) ──
+
+export async function sendInfoMasukSosial(peserta: Peserta): Promise<void> {
+  const content = `
+    <p style="margin:0 0 8px;color:#7A1F2A;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Lupa Password</p>
+    <h1 style="margin:0 0 16px;color:#1A1A1A;font-size:24px;font-family:Georgia,serif;">Akun Anda tidak memakai password</h1>
+    <p style="margin:0 0 20px;color:#555;font-size:15px;line-height:1.6;">
+      Halo ${peserta.inisial}, kami menerima permintaan reset password untuk email ini. Akun PARIBAN Anda terdaftar
+      lewat <strong>Google atau Facebook</strong>, jadi tidak memiliki password yang perlu diatur ulang.
+      Untuk masuk, gunakan tombol <strong>Google</strong> atau <strong>Facebook</strong> di halaman masuk
+      dengan akun yang sama seperti saat mendaftar.
+    </p>
+
+    ${btn(`${BASE_URL}/masuk`, "Buka Halaman Masuk →")}
+
+    <p style="margin:24px 0 0;color:#888;font-size:13px;line-height:1.6;">
+      Jika Anda tidak meminta ini, abaikan email ini — tidak ada yang berubah pada akun Anda.
+    </p>
+  `;
+
+  await kirimEmail(
+    { to: peserta.email, subject: "Cara masuk ke akun PARIBAN Anda", html: wrap("Cara Masuk PARIBAN", content) },
+    "info masuk google/facebook",
+  );
 }

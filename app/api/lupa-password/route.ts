@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
+import { buatTokenReset } from "@/lib/reset-token";
+import { lewatBatas } from "@/lib/rate-limit";
+import { BASE_URL, sendResetPassword, sendInfoMasukSosial } from "@/lib/email";
 
+const JEDA_PER_EMAIL_MS = 5 * 60 * 1000; // 1 permintaan per email per 5 menit
+const BATAS_PER_IP = 10; // 10 permintaan per IP per jam
+const JENDELA_IP_MS = 60 * 60 * 1000;
+
+/**
+ * Selalu menjawab sukses yang sama (tidak membocorkan apakah email terdaftar,
+ * apakah akunnya punya password, atau apakah permintaan dibatasi). Yang
+ * terdaftar dan punya password menerima tautan reset; akun Google/Facebook
+ * (tanpa password) menerima email penjelasan TANPA tautan reset.
+ */
 export async function POST(req: Request) {
   let body: { email: string };
   try {
@@ -9,52 +22,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { email } = body;
-  if (!email?.trim()) {
+  const email = body.email?.trim().toLowerCase();
+  if (!email) {
     return NextResponse.json({ error: "Email diperlukan" }, { status: 400 });
   }
 
-  const list = await loadPeserta();
-  const peserta = list.find(
-    (p) => p.email.toLowerCase() === email.trim().toLowerCase(),
-  );
-
-  // Selalu return sukses agar tidak mengekspos apakah email terdaftar
-  if (!peserta) {
+  // Pembatasan per instance (lihat lib/rate-limit.ts). Saat terkena batas
+  // jawabannya tetap "ok", hanya emailnya tidak dikirim.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "tanpa-ip";
+  if (lewatBatas(`lupa:ip:${ip}`, BATAS_PER_IP, JENDELA_IP_MS) || lewatBatas(`lupa:email:${email}`, 1, JEDA_PER_EMAIL_MS)) {
     return NextResponse.json({ ok: true });
   }
 
-  // Kirim email reset password jika Resend dikonfigurasi
-  try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const baseUrl = process.env.NEXTAUTH_URL ?? "https://pariban-match.vercel.app";
-    // Token sederhana: base64 dari kode + timestamp (expire 1 jam)
-    const token = Buffer.from(`${peserta.kode}:${Date.now()}`).toString("base64url");
-    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+  const list = await loadPeserta();
+  const peserta = list.find((p) => p.email.toLowerCase() === email);
+  if (!peserta || peserta.banned) {
+    return NextResponse.json({ ok: true });
+  }
 
-    await resend.emails.send({
-      from: "PARIBAN <noreply@resend.dev>",
-      to: email.trim(),
-      subject: "Reset Password PARIBAN",
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-          <p style="font-size:22px;font-weight:700;color:#7A1E28">PARIBAN</p>
-          <h2 style="font-size:18px;margin-top:24px">Reset Password</h2>
-          <p style="color:#555;line-height:1.6">
-            Halo ${peserta.inisial},<br/>
-            Kami menerima permintaan reset password untuk akun Anda.
-          </p>
-          <a href="${resetUrl}" style="display:inline-block;margin:24px 0;background:#7A1E28;color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:600;font-size:14px">
-            Reset Password Saya
-          </a>
-          <p style="color:#888;font-size:12px">Tautan ini berlaku selama 1 jam. Jika Anda tidak meminta reset, abaikan email ini.</p>
-        </div>
-      `,
-    });
+  try {
+    if (!peserta.passwordHash) {
+      await sendInfoMasukSosial(peserta);
+    } else {
+      const token = buatTokenReset(peserta.kode, peserta.passwordHash);
+      if (!token) {
+        console.error("[lupa-password] SESSION_SECRET belum diset — tautan reset tidak bisa dibuat");
+      } else {
+        await sendResetPassword(peserta, `${BASE_URL}/reset-password?token=${encodeURIComponent(token)}`);
+      }
+    }
   } catch (e) {
-    console.error("Gagal kirim email reset:", e);
-    // Tetap return sukses agar UX konsisten
+    // Detail kegagalan (pengirim belum terverifikasi dll.) sudah dicatat oleh
+    // kirimEmail di lib/email.ts. Jawaban ke pengguna tetap netral.
+    console.error(`[lupa-password] email untuk ${peserta.kode} tidak terkirim:`, e instanceof Error ? e.message : e);
   }
 
   return NextResponse.json({ ok: true });
