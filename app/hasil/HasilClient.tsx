@@ -5,29 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
-import { PAKET_PREMIUM, TRIAL_DURASI_HARI, type PaketId } from "@/lib/pricing";
-
-const IS_PRODUCTION = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
-const CLIENT_KEY = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ?? "";
-const SNAP_JS = IS_PRODUCTION
-  ? "https://app.midtrans.com/snap/snap.js"
-  : "https://app.sandbox.midtrans.com/snap/snap.js";
+import { PAKET_PREMIUM, TRIAL_DURASI_HARI } from "@/lib/pricing";
 
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     faceapi?: any;
-    snap?: {
-      pay: (
-        token: string,
-        options: {
-          onSuccess?: (result: unknown) => void;
-          onPending?: (result: unknown) => void;
-          onError?: (result: unknown) => void;
-          onClose?: () => void;
-        },
-      ) => void;
-    };
   }
 }
 
@@ -669,9 +652,6 @@ export default function HasilClient({ kode }: { kode: string }) {
   const [data, setData] = useState<HasilData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [payLoading, setPayLoading] = useState(false);
-  const [payError, setPayError] = useState("");
-  const [snapReady, setSnapReady] = useState(false);
   const [showPaketModal, setShowPaketModal] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [chatLoading, setChatLoading] = useState<string | null>(null);
@@ -705,11 +685,11 @@ export default function HasilClient({ kode }: { kode: string }) {
   }, [loadData]);
 
   useEffect(() => {
-    // Midtrans kembali dengan ?payment=success, Mayar dengan ?status=success.
+    // Mayar mengarahkan kembali dengan ?status=success (?payment=success juga diterima).
     // Kembalinya browser ke sini BUKAN bukti pembayaran berhasil — gateway
     // manapun bisa saja mengarahkan ke sini walau pembayaran dibatalkan atau
     // belum selesai. Status Premium hanya pernah diaktifkan oleh webhook
-    // server-ke-server yang sudah diverifikasi (api/payment/notify), bukan
+    // server-ke-server yang sudah diverifikasi (api/payment/mayar-notify), bukan
     // oleh query parameter ini. Efek ini cuma memicu refresh data supaya
     // kalau webhook-nya sudah lebih dulu diproses, hasilnya langsung
     // terlihat — bukan menetapkan status apa pun sendiri.
@@ -728,37 +708,6 @@ export default function HasilClient({ kode }: { kode: string }) {
     }, 3000);
     return () => clearTimeout(retry);
   }, [searchParams, loadData]);
-
-  async function handleUpgrade(paket: PaketId) {
-    if (!snapReady || !window.snap) {
-      setPayError("Sistem pembayaran belum siap, coba lagi sebentar.");
-      return;
-    }
-    setPayLoading(true);
-    setPayError("");
-    try {
-      const res = await fetch("/api/payment/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kode, paket }),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        setPayError(result.error || "Gagal membuat transaksi");
-        return;
-      }
-      window.snap.pay(result.snapToken, {
-        onSuccess: () => { setShowPaketModal(false); loadData(); },
-        onPending: () => setPayError("Pembayaran menunggu konfirmasi."),
-        onError: () => setPayError("Pembayaran gagal. Silakan coba lagi."),
-        onClose: () => setPayLoading(false),
-      });
-    } catch {
-      setPayError("Gagal menghubungi server pembayaran.");
-    } finally {
-      setPayLoading(false);
-    }
-  }
 
   async function bukaChat(lawanKode: string) {
     setChatLoading(lawanKode);
@@ -864,12 +813,6 @@ export default function HasilClient({ kode }: { kode: string }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Script
-        src={SNAP_JS}
-        data-client-key={CLIENT_KEY}
-        strategy="lazyOnload"
-        onLoad={() => setSnapReady(true)}
-      />
       <Script
         src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"
         strategy="lazyOnload"
@@ -1071,7 +1014,7 @@ export default function HasilClient({ kode }: { kode: string }) {
       </nav>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
-        {/* Konfirmasi kembali dari payment gateway (Midtrans/Mayar) */}
+        {/* Konfirmasi kembali dari payment gateway (Mayar) */}
         {checkingPayment && (
           <div className="mb-6 rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-center gap-3">
             <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -1159,7 +1102,6 @@ export default function HasilClient({ kode }: { kode: string }) {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Trial {TRIAL_DURASI_HARI} hari telah habis. Pilih paket berlangganan untuk tetap bisa mengakses semua fitur, termasuk chat dengan kandidat saling cocok.
                 </p>
-                {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
                 <button
                   type="button"
                   onClick={() => setShowPaketModal(true)}
@@ -1182,7 +1124,6 @@ export default function HasilClient({ kode }: { kode: string }) {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Beberapa kandidat memiliki skor di atas 90. Pilih paket berlangganan untuk melihat hasil lengkap.
                 </p>
-                {payError && <p className="mt-2 text-sm text-red-600">{payError}</p>}
                 <button
                   type="button"
                   onClick={() => setShowPaketModal(true)}

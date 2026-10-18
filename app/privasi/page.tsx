@@ -49,7 +49,7 @@ export default function PrivasiPage() {
                 <li>Kata sandi akun (disimpan dalam bentuk hash, bukan teks asli)</li>
                 <li>Jika mendaftar lewat Google/Facebook: nama dan email dari akun tersebut</li>
                 <li>Riwayat percakapan dengan kandidat yang saling cocok (isi pesan, waktu kirim)</li>
-                <li>Data transaksi pembayaran: paket yang dibeli dan status aktif langganan (nomor kartu/rekening tidak pernah kami terima atau simpan — proses pembayaran ditangani langsung oleh Midtrans)</li>
+                <li>Data transaksi pembayaran: paket yang dibeli, status aktif langganan, dan catatan notifikasi pembayaran yang dikirim Mayar kepada kami (email dan nomor telepon yang Anda isi saat membayar, nominal, ID transaksi, dan status). Nomor kartu/rekening tidak pernah kami terima atau simpan — proses pembayaran ditangani langsung oleh Mayar</li>
               </ul>
             </Bagian>
 
@@ -68,7 +68,7 @@ export default function PrivasiPage() {
               <p>Kami tidak menjual data Anda. Data dibagikan secara terbatas kepada pihak yang membantu kami menjalankan layanan:</p>
               <ul className="list-disc pl-5 space-y-1">
                 <li><strong className="text-foreground">Supabase</strong> — penyedia basis data dan penyimpanan foto profil kami</li>
-                <li><strong className="text-foreground">Midtrans</strong> — payment gateway yang memproses pembayaran langganan; kami hanya mengirim nama, email, dan nomor WhatsApp untuk keperluan transaksi, tidak pernah data kartu/rekening</li>
+                <li><strong className="text-foreground">Mayar (mayar.id)</strong> — payment gateway yang memproses pembayaran langganan. Pembayaran dilakukan di halaman Mayar, sehingga data yang Anda isi di sana (nama, email, nomor telepon, dan data pembayaran) diterima Mayar. Dari Mayar kami menerima kembali email, nomor telepon, nominal, dan status transaksi untuk mengaktifkan langganan dan mencatat transaksi; kami tidak menerima data kartu/rekening</li>
                 <li><strong className="text-foreground">Google / Facebook</strong> — jika Anda memilih mendaftar/masuk lewat akun tersebut</li>
                 <li><strong className="text-foreground">Resend</strong> — layanan pengiriman email transaksional kami</li>
                 <li>Kandidat lain di platform — inisial nama, foto, dan sebagian profil ditampilkan kepada peserta yang cocok dengan Anda sebagai bagian inti dari fitur pencocokan</li>

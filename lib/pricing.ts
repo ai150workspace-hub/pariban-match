@@ -1,6 +1,6 @@
 /**
  * Satu-satunya sumber harga, durasi paket, dan durasi trial.
- * Diimpor oleh: app/hasil/HasilClient.tsx, app/api/payment/create/route.ts,
+ * Diimpor oleh: app/hasil/HasilClient.tsx, app/api/payment/mayar-notify/route.ts,
  * app/api/admin/stats/route.ts, app/harga/page.tsx, lib/membership.ts.
  */
 

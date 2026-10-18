@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   description: "Paket berlangganan PARIBAN Match: trial gratis 14 hari dan paket premium 1, 3, atau 6 bulan.",
 };
 
-const METODE_PEMBAYARAN = ["QRIS"];
-
 export default function HargaPage() {
   return (
     <>
@@ -85,14 +83,12 @@ export default function HargaPage() {
           {/* Metode pembayaran */}
           <div className="mt-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
             <h2 className="font-heading text-lg font-bold text-foreground">Metode Pembayaran</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {METODE_PEMBAYARAN.map((m) => (
-                <li key={m} className="flex items-start gap-2">
-                  <span className="mt-0.5 text-brand">✓</span>
-                  <span>{m}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              Pembayaran dilakukan di halaman pembayaran Mayar. Pilihan metode yang tersedia
+              (misalnya QRIS, virtual account bank, e-wallet, atau kartu) ditampilkan di
+              halaman tersebut saat Anda memilih paket, dan mengikuti metode yang
+              diaktifkan pada layanan Mayar.
+            </p>
             <p
               role="note"
               className="mt-4 rounded-xl border border-border bg-secondary/60 px-4 py-3 text-sm text-foreground"
@@ -101,7 +97,8 @@ export default function HargaPage() {
               Pembayaran dengan email berbeda tidak akan otomatis mengaktifkan Premium.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
-              Pembayaran diproses lewat Midtrans, penyedia payment gateway resmi berizin Bank Indonesia.
+              Pembayaran diproses oleh Mayar (mayar.id), penyedia layanan pembayaran pihak ketiga.
+              Kami tidak menerima atau menyimpan nomor kartu maupun rekening Anda.
             </p>
           </div>
 

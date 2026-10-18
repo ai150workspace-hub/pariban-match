@@ -75,9 +75,10 @@ export default function LanggananPage() {
               <p>
                 <strong className="text-foreground">Data yang tetap disimpan:</strong> catatan
                 penghapusan akun (nama, marga, alasan) untuk keperluan audit
-                internal, serta catatan transaksi pembayaran yang tersimpan pada
-                sistem penyedia layanan pembayaran (Midtrans) sesuai kewajiban
-                pembukuan dan perpajakan.
+                internal, serta catatan transaksi pembayaran (email dan nomor
+                telepon pembayar, nominal, paket, status, dan ID transaksi) yang
+                tersimpan pada sistem penyedia layanan pembayaran (Mayar) dan pada
+                basis data kami, sesuai kewajiban pembukuan dan perpajakan.
               </p>
               <p>
                 Penghapusan akun bersifat permanen. Masa aktif langganan yang

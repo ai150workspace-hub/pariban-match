@@ -16,8 +16,8 @@ const PROVIDER = "mayar";
  * Webhook) sebagai:
  *   https://www.paribanmatch.id/api/payment/mayar-notify?token=<MAYAR_WEBHOOK_TOKEN>
  *
- * Dokumentasi resmi Mayar tidak menjelaskan skema signature untuk webhook-nya
- * (beda dengan Midtrans yang punya signature_key). Verifikasi di sini pakai
+ * Dokumentasi resmi Mayar tidak menjelaskan skema signature untuk webhook-nya.
+ * Verifikasi di sini pakai
  * token rahasia di query string sebagai gantinya — nilainya harus SAMA
  * persis dengan env var MAYAR_WEBHOOK_TOKEN di Vercel, dan hanya Kakak yang
  * tahu nilainya (generate sendiri, jangan tebakan).
