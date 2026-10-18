@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadPeserta } from "@/lib/storage";
+import { buatSesiPeserta, opsiCookieSesi } from "@/lib/session";
 import { verifyPassword } from "@/lib/hash";
 
 export async function POST(req: Request) {
@@ -34,8 +35,18 @@ export async function POST(req: Request) {
     );
   }
 
-  // Verifikasi password jika akun sudah punya password
-  if (peserta.passwordHash) {
+  // Akun tanpa password (daftar lewat Google/Facebook) TIDAK boleh masuk hanya
+  // dengan email — siapa pun bisa mengetik email orang lain. Mereka masuk lewat
+  // tombol Google/Facebook (POST /api/masuk/oauth, identitasnya diverifikasi server).
+  if (!peserta.passwordHash) {
+    return NextResponse.json(
+      { error: "Akun ini terdaftar lewat Google/Facebook. Silakan masuk dengan tombol Google atau Facebook." },
+      { status: 401 },
+    );
+  }
+
+  // Verifikasi password
+  {
     if (!password) {
       return NextResponse.json(
         { error: "Password diperlukan untuk akun ini." },
@@ -50,14 +61,13 @@ export async function POST(req: Request) {
       );
     }
   }
-  // Akun lama tanpa password: izinkan login hanya dengan email (backward compat)
 
+  const sesi = buatSesiPeserta(peserta.kode);
+  if (!sesi) {
+    console.error("SESSION_SECRET belum diset — tidak bisa menerbitkan sesi");
+    return NextResponse.json({ error: "Server belum siap, coba lagi nanti." }, { status: 500 });
+  }
   const res = NextResponse.json({ kode: peserta.kode, inisial: peserta.inisial });
-  res.cookies.set("pariban_kode", peserta.kode, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 hari
-  });
+  res.cookies.set("pariban_kode", sesi, opsiCookieSesi);
   return res;
 }

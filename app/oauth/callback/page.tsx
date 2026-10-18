@@ -31,15 +31,15 @@ function OAuthCallbackInner() {
 
     setMsg(`Memeriksa akun untuk ${email}...`);
 
-    fetch("/api/masuk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    })
-      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-      .then(({ ok, data }) => {
+    // Identitas diverifikasi SERVER dari sesi Google/Facebook (bukan dari email
+    // kiriman klien); server menerbitkan cookie sesi bertanda tangan.
+    fetch("/api/masuk/oauth", { method: "POST" })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, status: res.status, data })))
+      .then(({ ok, status, data }) => {
         if (ok && data.kode) {
           router.replace("/hasil");
+        } else if (status !== 404) {
+          setErr(data.error || "Login tidak berhasil. Silakan coba lagi.");
         } else {
           // Belum terdaftar — arahkan ke halaman persetujuan dulu.
           // Email/nama dititipkan lewat sessionStorage, bukan query

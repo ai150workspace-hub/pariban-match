@@ -6,6 +6,7 @@ import { sendKonfirmasiDaftar } from "@/lib/email";
 import { hashPassword } from "@/lib/hash";
 import { newTrialExpiry } from "@/lib/membership";
 import { isAdminRequest, forbidden } from "@/lib/request-auth";
+import { buatSesiPeserta, opsiCookieSesi } from "@/lib/session";
 
 export async function GET() {
   if (!(await isAdminRequest())) return forbidden();
@@ -109,12 +110,13 @@ export async function POST(req: Request) {
       { ok: true, kode: saved.kode, inisial: saved.inisial },
       { status: 201 },
     );
-    res.cookies.set("pariban_kode", saved.kode, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 hari
-    });
+    const sesi = buatSesiPeserta(saved.kode);
+    if (sesi) {
+      res.cookies.set("pariban_kode", sesi, opsiCookieSesi);
+    } else {
+      // Akun sudah dibuat; pengguna cukup masuk manual lewat /masuk.
+      console.error("SESSION_SECRET belum diset — cookie sesi tidak diterbitkan saat daftar");
+    }
     return res;
   } catch (err) {
     return NextResponse.json(

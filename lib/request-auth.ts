@@ -1,26 +1,31 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, isValidAdminToken } from "@/lib/admin-token";
+import { PESERTA_COOKIE_NAME, verifikasiSesiPeserta } from "@/lib/session";
 
 /**
- * Penjaga akses sementara (tambalan darurat). Cookie peserta `pariban_kode`
- * masih berupa kode mentah yang bisa dipalsukan — ini hanya menutup akses
- * TANPA cookie sama sekali. Cookie sesi bertanda tangan menyusul di tahap
- * berikutnya; cukup ganti isi fungsi di file ini.
+ * Penjaga akses. Cookie peserta dan admin adalah sesi BERTANDA TANGAN
+ * (lib/session.ts): cookie yang tidak valid, dipalsukan, kedaluwarsa, atau
+ * masih berformat lama (kode mentah) dianggap tidak login.
  */
 
-export const PESERTA_COOKIE_NAME = "pariban_kode";
+export { PESERTA_COOKIE_NAME };
+
+/** Kode peserta dari sesi yang valid, atau null kalau tidak login. */
+export async function getKodeSesi(): Promise<string | null> {
+  const store = await cookies();
+  return verifikasiSesiPeserta(store.get(PESERTA_COOKIE_NAME)?.value);
+}
 
 export async function isAdminRequest(): Promise<boolean> {
   const store = await cookies();
   return isValidAdminToken(store.get(ADMIN_COOKIE_NAME)?.value);
 }
 
-/** True bila cookie admin valid ATAU cookie peserta nilainya sama dengan `kode`. */
+/** True bila sesi admin valid ATAU sesi peserta valid dengan kode sama dengan `kode`. */
 export async function canActAs(kode: string): Promise<boolean> {
-  const store = await cookies();
-  if (isValidAdminToken(store.get(ADMIN_COOKIE_NAME)?.value)) return true;
-  const mine = store.get(PESERTA_COOKIE_NAME)?.value;
+  if (await isAdminRequest()) return true;
+  const mine = await getKodeSesi();
   return !!mine && mine === kode;
 }
 

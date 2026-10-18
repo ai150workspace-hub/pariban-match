@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getKodeSesi } from "@/lib/request-auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import HasilClient from "./HasilClient";
@@ -6,8 +6,8 @@ import HasilClient from "./HasilClient";
 export const dynamic = "force-dynamic";
 
 export default async function HasilPage() {
-  const cookieStore = await cookies();
-  const kode = cookieStore.get("pariban_kode")?.value;
+  // Sesi tidak ada / tidak valid / format lama -> ke /masuk (bukan error).
+  const kode = await getKodeSesi();
   if (!kode) redirect("/masuk");
 
   return (

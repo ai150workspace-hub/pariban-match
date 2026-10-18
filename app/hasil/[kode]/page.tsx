@@ -1,8 +1,7 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import HasilClient from "../HasilClient";
-import { canActAs } from "@/lib/request-auth";
+import { canActAs, getKodeSesi } from "@/lib/request-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +13,7 @@ export default async function HasilKodePage({
   params: Promise<{ kode: string }>;
 }) {
   const { kode } = await params;
-  const cookieStore = await cookies();
-  const myKode = cookieStore.get("pariban_kode")?.value;
+  const myKode = await getKodeSesi();
   if (myKode === kode) redirect("/hasil");
   // Selain pemilik kode ini, hanya admin yang boleh membuka halaman ini.
   if (!(await canActAs(kode))) redirect("/masuk");
