@@ -14,7 +14,6 @@ declare global {
   }
 }
 
-const PREMIUM_THRESHOLD = 90;
 
 const PAKET = PAKET_PREMIUM;
 
@@ -1108,28 +1107,6 @@ export default function HasilClient({ kode }: { kode: string }) {
                   className="mt-3 inline-flex h-9 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
                 >
                   Pilih Paket Berlangganan
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Banner upgrade untuk non-trial user */}
-        {!isPremium && !trialExpired && !isTrialActive && top3.some((m) => m.skor > PREMIUM_THRESHOLD) && (
-          <div className="mb-6 rounded-xl border border-accent/30 bg-accent/5 p-5">
-            <div className="flex items-start gap-4">
-              <span className="text-2xl">🔒</span>
-              <div className="flex-1">
-                <p className="font-semibold text-foreground">Ada kecocokan tinggi yang tersembunyi</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Beberapa kandidat memiliki skor di atas 90. Pilih paket berlangganan untuk melihat hasil lengkap.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowPaketModal(true)}
-                  className="mt-3 inline-flex h-9 items-center rounded-lg bg-accent px-5 text-sm font-semibold text-white hover:bg-accent/90 transition-colors"
-                >
-                  Lihat Paket Premium
                 </button>
               </div>
             </div>

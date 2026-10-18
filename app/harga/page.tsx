@@ -122,7 +122,7 @@ export default function HargaPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-adat-blokir">✕</span>
-                  <span>Tidak bisa memulai percakapan baru dengan kandidat yang saling cocok sampai berlangganan kembali</span>
+                  <span>Percakapan yang sudah ada tetap bisa dibaca, tetapi tidak bisa memulai percakapan baru atau mengirim pesan sampai berlangganan kembali</span>
                 </li>
               </ul>
             </div>
