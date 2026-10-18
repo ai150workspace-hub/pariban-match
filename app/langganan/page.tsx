@@ -75,10 +75,12 @@ export default function LanggananPage() {
               <p>
                 <strong className="text-foreground">Data yang tetap disimpan:</strong> catatan
                 penghapusan akun (nama, marga, alasan) untuk keperluan audit
-                internal, serta catatan transaksi pembayaran (email dan nomor
-                telepon pembayar, nominal, paket, status, dan ID transaksi) yang
-                tersimpan pada sistem penyedia layanan pembayaran (Mayar) dan pada
-                basis data kami, sesuai kewajiban pembukuan dan perpajakan.
+                internal, serta catatan transaksi pembayaran (nominal, paket,
+                status, tanggal, dan ID transaksi) yang tersimpan pada basis data
+                kami dan pada sistem penyedia layanan pembayaran (Mayar), sesuai
+                kewajiban pembukuan dan perpajakan. Email dan nomor telepon
+                pembayar pada catatan di basis data kami dihapus saat akun
+                dihapus; data yang tersimpan di Mayar mengikuti kebijakan Mayar.
               </p>
               <p>
                 Penghapusan akun bersifat permanen. Masa aktif langganan yang

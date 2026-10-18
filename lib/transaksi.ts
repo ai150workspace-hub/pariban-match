@@ -266,3 +266,103 @@ export async function listTransaksi(
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit);
 }
+
+// ── Anonimisasi saat akun dihapus ─────────────────────────────────
+
+/** Awalan kolom `catatan` yang menandai baris sudah dianonimkan. */
+export const PENANDA_ANONIM = "Dianonimkan";
+
+// Kunci payload yang berisi data pribadi pembayar. Seluruh nilainya (termasuk
+// objek bersarang) dikosongkan.
+const KUNCI_PRIBADI_AWALAN = /^(customer|buyer|payer|given)/i;
+const KUNCI_PRIBADI_PERSIS = new Set([
+  "custom_field", "customfield", "pixelfbp", "pixelfbc",
+  "email", "mobile", "phone", "telp", "name", "nama", "address", "alamat",
+]);
+
+function normHp(s: string): string {
+  const d = s.replace(/\D/g, "");
+  return d.startsWith("62") ? "0" + d.slice(2) : d;
+}
+
+/**
+ * Salinan payload tanpa data pribadi pembayar: kunci pribadi dikosongkan, dan
+ * nilai apa pun (di kunci tak dikenal sekalipun) yang sama dengan email atau
+ * nomor HP pembayar juga dikosongkan. Field lain (nominal, status, id, nama
+ * produk, tanggal, ...) dibiarkan utuh.
+ */
+export function redaksiPayload(
+  payload: unknown,
+  email: string | null,
+  hp: string | null,
+): unknown {
+  const emailNorm = email?.trim().toLowerCase() || null;
+  const hpNorm = hp && normHp(hp).length >= 8 ? normHp(hp) : null;
+
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+        out[k] =
+          KUNCI_PRIBADI_AWALAN.test(k) || KUNCI_PRIBADI_PERSIS.has(k.toLowerCase())
+            ? null
+            : walk(val);
+      }
+      return out;
+    }
+    if (typeof v === "string") {
+      if (emailNorm && v.trim().toLowerCase() === emailNorm) return null;
+      if (hpNorm && normHp(v) === hpNorm) return null;
+    }
+    return v;
+  };
+  return walk(payload);
+}
+
+/**
+ * Anonimkan data pembayar pada SEMUA transaksi yang peserta_kode-nya = `kode`:
+ * email_pembayar & nomor_hp_pembayar dikosongkan, data pribadi di raw_payload
+ * dikosongkan, baris ditandai lewat `catatan`. Nominal, paket, status,
+ * transaction_id, order_id, provider, created_at, dan peserta_kode tetap utuh
+ * (catatan keuangan). Transaksi yang peserta_kode-nya NULL (belum tercocokkan)
+ * TIDAK disentuh — emailnya masih dibutuhkan untuk pencocokan manual.
+ * Mengembalikan jumlah baris yang dianonimkan.
+ */
+export async function anonimkanTransaksiPeserta(kode: string): Promise<number> {
+  const tanggal = new Date().toISOString().slice(0, 10);
+  const hitungPatch = (t: Transaksi): Partial<Transaksi> => ({
+    emailPembayar: null,
+    nomorHpPembayar: null,
+    rawPayload: redaksiPayload(t.rawPayload, t.emailPembayar, t.nomorHpPembayar),
+    catatan: t.catatan?.startsWith(PENANDA_ANONIM)
+      ? t.catatan
+      : `${PENANDA_ANONIM} ${tanggal} (akun peserta dihapus)${t.catatan ? ` | ${t.catatan}` : ""}`,
+  });
+
+  if (USE_SUPABASE) {
+    const { getSupabase } = await import("./supabase");
+    const sb = getSupabase();
+    const { data, error } = await sb.from("transaksi").select("*").eq("peserta_kode", kode);
+    if (error) throw new Error(error.message);
+    let n = 0;
+    for (const row of (data ?? []) as DbRow[]) {
+      const patch = patchToDb(hitungPatch(fromDb(row)));
+      // patchToDb melewati nilai undefined saja, null tetap ditulis sebagai NULL.
+      const { error: e2 } = await sb.from("transaksi").update(patch).eq("id", row.id);
+      if (e2) throw new Error(e2.message);
+      n++;
+    }
+    return n;
+  }
+
+  const list = await fileLoad();
+  let n = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].pesertaKode !== kode) continue;
+    list[i] = { ...list[i], ...hitungPatch(list[i]) };
+    n++;
+  }
+  if (n > 0) await fileSave(list);
+  return n;
+}

@@ -84,10 +84,10 @@ export default function HargaPage() {
           <div className="mt-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
             <h2 className="font-heading text-lg font-bold text-foreground">Metode Pembayaran</h2>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              Pembayaran dilakukan di halaman pembayaran Mayar. Pilihan metode yang tersedia
-              (misalnya QRIS, virtual account bank, e-wallet, atau kartu) ditampilkan di
-              halaman tersebut saat Anda memilih paket, dan mengikuti metode yang
-              diaktifkan pada layanan Mayar.
+              Pembayaran diproses oleh Mayar. Tersedia QRIS dan transfer bank (Virtual
+              Account) dari berbagai bank. Pilihan lengkap akan tampil di halaman
+              pembayaran. Kami tidak menerima atau menyimpan nomor kartu maupun rekening
+              Anda.
             </p>
             <p
               role="note"
@@ -95,10 +95,6 @@ export default function HargaPage() {
             >
               <strong>Gunakan email yang sama dengan email akun PARIBAN kamu saat membayar.</strong>{" "}
               Pembayaran dengan email berbeda tidak akan otomatis mengaktifkan Premium.
-            </p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Pembayaran diproses oleh Mayar (mayar.id), penyedia layanan pembayaran pihak ketiga.
-              Kami tidak menerima atau menyimpan nomor kartu maupun rekening Anda.
             </p>
           </div>
 

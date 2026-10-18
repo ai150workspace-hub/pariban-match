@@ -91,6 +91,14 @@ export default function PrivasiPage() {
                 <strong className="text-foreground">tidak menyertakan email, nomor WhatsApp, kata sandi, atau foto Anda</strong>,
                 dan saat ini disimpan tanpa batas waktu penghapusan otomatis.
               </p>
+              <p>
+                Catatan transaksi pembayaran (nominal, paket, status, tanggal, dan ID
+                transaksi) tetap kami simpan untuk kewajiban pembukuan dan perpajakan.
+                Namun{" "}
+                <strong className="text-foreground">email dan nomor telepon pembayar pada catatan tersebut dihapus saat Anda menghapus akun</strong>.
+                Data yang tersimpan di Mayar sebagai penyedia pembayaran mengikuti
+                kebijakan Mayar.
+              </p>
             </Bagian>
 
             <Bagian judul="5. Hak Anda">

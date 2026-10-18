@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updatePeserta, deletePeserta, loadPeserta } from "@/lib/storage";
 import { logDeletion } from "@/lib/deletion-log";
+import { anonimkanTransaksiPeserta } from "@/lib/transaksi";
 import { canActAs, isAdminRequest, forbidden } from "@/lib/request-auth";
 
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
@@ -57,6 +58,20 @@ export async function DELETE(
   const target = list.find((p) => p.kode === kode);
   if (!target) {
     return NextResponse.json({ error: "Peserta tidak ditemukan" }, { status: 404 });
+  }
+
+  // Anonimkan data pembayar (email, nomor HP, data pribadi di payload) pada
+  // transaksi milik peserta ini; catatan keuangannya (nominal, paket, status, ID)
+  // tetap disimpan. Transaksi yang belum tercocokkan tidak disentuh. Kalau gagal,
+  // hentikan SEBELUM ada yang dihapus supaya tidak tersisa data pribadi diam-diam.
+  try {
+    await anonimkanTransaksiPeserta(kode);
+  } catch (e) {
+    console.error("Gagal menganonimkan transaksi untuk", kode, e);
+    return NextResponse.json(
+      { error: "Gagal menghapus data pembayaran. Silakan coba lagi." },
+      { status: 500 },
+    );
   }
 
   // Catat alasan hapus akun SEBELUM data profil dihapus
