@@ -1113,6 +1113,31 @@ export default function HasilClient({ kode }: { kode: string }) {
           </div>
         )}
 
+        {/* Akun tanpa trial dan tanpa premium aktif (akun lama): ajakan jujur —
+            semua hasil terlihat, yang dibatasi hanya memulai chat. Peserta dengan
+            trial berjalan/habis atau premium aktif punya penanda sendiri / tidak
+            perlu banner ini. */}
+        {!peserta.trialEndsAt && !isPaidPremium && (
+          <div className="mb-6 rounded-xl border border-border bg-secondary/60 p-5">
+            <div className="flex items-start gap-4">
+              <span className="text-2xl">💬</span>
+              <div className="flex-1">
+                <p className="font-semibold text-foreground">Chat memerlukan paket premium.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Kamu bisa melihat semua hasil pencocokan. Untuk memulai percakapan dengan kandidat yang saling cocok, pilih salah satu paket.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPaketModal(true)}
+                  className="mt-3 inline-flex h-9 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+                >
+                  Pilih Paket
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Galeri Foto */}
         <FotoGaleri
           kode={peserta.kode}
