@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readFile, writeFile, mkdir, unlink } from "fs/promises";
+import { readFile, writeFile, mkdir, unlink, readdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 import { updatePeserta } from "@/lib/storage";
@@ -11,6 +11,29 @@ const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const BUCKET = "pariban-photos";
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 jam
+
+/**
+ * Jumlah foto yang BENAR-BENAR ada: slot berbeda di storage (profil
+ * `{kode}.ext` + `{kode}_1..5.ext`). Dihitung ulang dari storage setiap
+ * unggah/hapus, bukan dari nomor slot terakhir yang diunggah.
+ */
+async function hitungFoto(kode: string): Promise<number> {
+  const re = new RegExp(`^${kode.replace(/[^A-Za-z0-9]/g, "")}(_[1-5])?\\.(jpg|jpeg|png|webp)$`);
+  let names: string[] = [];
+  if (USE_SUPABASE) {
+    const { getSupabase } = await import("@/lib/supabase");
+    const { data } = await getSupabase().storage.from(BUCKET).list("", { search: kode, limit: 100 });
+    names = (data ?? []).map((f) => f.name);
+  } else if (existsSync(PHOTOS_DIR)) {
+    names = await readdir(PHOTOS_DIR);
+  }
+  const slots = new Set<string>();
+  for (const n of names) {
+    const m = re.exec(n);
+    if (m) slots.add(m[1] ?? "");
+  }
+  return slots.size;
+}
 
 export async function GET(
   req: Request,
@@ -109,17 +132,9 @@ export async function POST(
     }
   }
 
-  // Update fotoCount — non-critical, ignore failures
+  // Update fotoCount (jumlah foto sebenarnya) — non-critical, ignore failures
   try {
-    const numIndex = parseInt(index, 10);
-    if (!isNaN(numIndex)) {
-      const { loadPeserta } = await import("@/lib/storage");
-      const all = await loadPeserta();
-      const current = all.find((p) => p.kode === kode);
-      if (current && (!current.fotoCount || numIndex > current.fotoCount)) {
-        await updatePeserta(kode, { fotoCount: numIndex }).catch(() => {});
-      }
-    }
+    await updatePeserta(kode, { fotoCount: await hitungFoto(kode) });
   } catch {}
 
   return NextResponse.json({ ok: true, storageKey });
@@ -144,6 +159,7 @@ export async function DELETE(
     if (!index) {
       await updatePeserta(kode, { foto: null as unknown as string }).catch(() => {});
     }
+    await updatePeserta(kode, { fotoCount: await hitungFoto(kode) }).catch(() => {});
     return NextResponse.json({ ok: true });
   }
 
@@ -159,6 +175,7 @@ export async function DELETE(
   if (!index && deleted) {
     await updatePeserta(kode, { foto: null as unknown as string }).catch(() => {});
   }
+  await updatePeserta(kode, { fotoCount: await hitungFoto(kode) }).catch(() => {});
 
   return NextResponse.json({ ok: true, deleted });
 }

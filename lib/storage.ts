@@ -40,6 +40,7 @@ type DbRow = {
   introvert: number; boleh_hubung: string; catatan: string;
   inisial: string; status_data: string;
   foto: string | null; premium: boolean; password_hash: string | null;
+  banned: boolean | null; foto_count: number | null; foto_live_verified: boolean | null;
   trial_ends_at: string | null;
   premium_expiry: string | null; premium_paket: string | null;
   pekerjaan: string | null; jabatan: string | null;
@@ -67,6 +68,9 @@ function dbToTs(r: DbRow): Peserta {
     inisial: r.inisial, statusData: r.status_data,
     foto: r.foto ?? undefined, premium: r.premium,
     passwordHash: r.password_hash ?? undefined,
+    banned: r.banned ?? false,
+    fotoCount: r.foto_count ?? undefined,
+    fotoLiveVerified: r.foto_live_verified ?? undefined,
     trialEndsAt: r.trial_ends_at ?? undefined,
     premiumExpiry: r.premium_expiry ?? undefined,
     premiumPaket: (r.premium_paket as "1bln" | "3bln" | "6bln") ?? undefined,
@@ -179,6 +183,41 @@ async function sbDelete(kode: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+// ── Status akun (dipakai pemeriksaan sesi) ────────────────────────
+
+export type StatusAkun = "ok" | "banned" | "tidak_ada";
+
+// Cache pendek per instance supaya halaman yang memuat banyak foto tidak
+// memicu satu query per gambar. Perubahan lewat updatePeserta/deletePeserta
+// di instance yang sama langsung membuang cache; di instance lain paling
+// lama TTL ini sebelum blokir/buka-blokir terasa.
+const STATUS_TTL_MS = 15_000;
+const statusCache = new Map<string, { status: StatusAkun; exp: number }>();
+
+function lupakanStatus(kode: string) {
+  statusCache.delete(kode);
+}
+
+/** Apakah akun masih ada dan tidak diblokir. Melempar error kalau database gagal dihubungi. */
+export async function getStatusAkun(kode: string): Promise<StatusAkun> {
+  const hit = statusCache.get(kode);
+  if (hit && hit.exp > Date.now()) return hit.status;
+
+  let status: StatusAkun;
+  if (USE_SUPABASE) {
+    const { getSupabase } = await import("./supabase");
+    const { data, error } = await getSupabase()
+      .from("peserta").select("banned").eq("kode", kode).maybeSingle();
+    if (error) throw new Error(error.message);
+    status = !data ? "tidak_ada" : data.banned ? "banned" : "ok";
+  } else {
+    const p = (await fileLoad()).find((x) => x.kode === kode);
+    status = !p ? "tidak_ada" : p.banned ? "banned" : "ok";
+  }
+  statusCache.set(kode, { status, exp: Date.now() + STATUS_TTL_MS });
+  return status;
+}
+
 // ── Public API ────────────────────────────────────────────────────
 
 export async function loadPeserta(): Promise<Peserta[]> {
@@ -205,6 +244,7 @@ export async function addPeserta(p: Peserta): Promise<Peserta> {
 }
 
 export async function updatePeserta(kode: string, updates: Partial<Peserta>): Promise<void> {
+  lupakanStatus(kode);
   if (USE_SUPABASE) {
     await sbUpdate(kode, updates);
     return;
@@ -217,6 +257,7 @@ export async function updatePeserta(kode: string, updates: Partial<Peserta>): Pr
 }
 
 export async function deletePeserta(kode: string): Promise<void> {
+  lupakanStatus(kode);
   if (USE_SUPABASE) {
     await sbDelete(kode);
     return;

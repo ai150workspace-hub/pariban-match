@@ -9,8 +9,10 @@ export async function GET(
 ) {
   const { kode } = await params;
   if (!(await canActAs(kode))) return forbidden();
-  const peserta = await loadPeserta();
-  const target = peserta.find((p) => p.kode === kode);
+  const semua = await loadPeserta();
+  const target = semua.find((p) => p.kode === kode);
+  // Akun yang diblokir tidak muncul sebagai kandidat siapa pun.
+  const peserta = semua.filter((p) => !p.banned);
 
   if (!target) {
     return NextResponse.json(

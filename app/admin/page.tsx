@@ -425,6 +425,9 @@ export default function AdminPage() {
       if (res.ok) {
         setPeserta((prev) => prev.map((p) => (p.kode === kode ? { ...p, banned: !current } : p)));
         await fetchStats();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || "Gagal mengubah status blokir.");
       }
     } finally {
       setBanningKode(null);

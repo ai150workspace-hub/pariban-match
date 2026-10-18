@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, isValidAdminToken } from "@/lib/admin-token";
 import { PESERTA_COOKIE_NAME, verifikasiSesiPeserta } from "@/lib/session";
+import { getStatusAkun } from "@/lib/storage";
 
 /**
  * Penjaga akses. Cookie peserta dan admin adalah sesi BERTANDA TANGAN
@@ -11,10 +12,22 @@ import { PESERTA_COOKIE_NAME, verifikasiSesiPeserta } from "@/lib/session";
 
 export { PESERTA_COOKIE_NAME };
 
-/** Kode peserta dari sesi yang valid, atau null kalau tidak login. */
+/**
+ * Kode peserta dari sesi yang valid, atau null kalau tidak login. Sesi milik
+ * akun yang diblokir atau sudah dihapus juga dianggap tidak login (cookie
+ * yang masih sah secara tanda tangan tidak lagi cukup).
+ */
 export async function getKodeSesi(): Promise<string | null> {
   const store = await cookies();
-  return verifikasiSesiPeserta(store.get(PESERTA_COOKIE_NAME)?.value);
+  const kode = verifikasiSesiPeserta(store.get(PESERTA_COOKIE_NAME)?.value);
+  if (!kode) return null;
+  try {
+    return (await getStatusAkun(kode)) === "ok" ? kode : null;
+  } catch (e) {
+    // Gagal tertutup: tidak bisa memastikan status akun -> anggap tidak login.
+    console.error("Gagal memeriksa status akun untuk sesi:", e);
+    return null;
+  }
 }
 
 export async function isAdminRequest(): Promise<boolean> {

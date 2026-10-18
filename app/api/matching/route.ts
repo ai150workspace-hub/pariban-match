@@ -6,7 +6,8 @@ import { isAdminRequest, forbidden } from "@/lib/request-auth";
 
 export async function GET() {
   if (!(await isAdminRequest())) return forbidden();
-  const peserta = await loadPeserta();
+  // Akun yang diblokir tidak ikut matching (tidak dipasangkan, tidak dikirimi email hasil).
+  const peserta = (await loadPeserta()).filter((p) => !p.banned);
 
   if (peserta.length < 2) {
     return NextResponse.json({
