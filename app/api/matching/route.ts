@@ -10,9 +10,14 @@ export async function GET() {
   const peserta = (await loadPeserta()).filter((p) => !p.banned);
 
   if (peserta.length < 2) {
+    // Bentuk respons SAMA dengan hasil normal (hasil kosong), bukan { error }:
+    // klien memakai .hasil.filter/.map dan tidak boleh menemukan field hilang.
     return NextResponse.json({
-      error: "Minimal 2 peserta untuk menjalankan matching.",
-      count: peserta.length,
+      totalPeserta: peserta.length,
+      totalPasangan: 0,
+      diblokir: 0,
+      hasil: [],
+      pesan: "Minimal 2 peserta untuk menjalankan matching.",
     });
   }
 

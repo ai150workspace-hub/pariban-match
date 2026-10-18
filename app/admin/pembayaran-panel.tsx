@@ -175,19 +175,21 @@ export function PembayaranPanel({
   if (!data) {
     return <div className="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">Memuat…</div>;
   }
+  const belumDiproses = data.belumDiproses ?? [];
+  const aktif = data.aktif ?? [];
   return (
     <div className="space-y-8">
       <section>
         <h2 className="mb-3 text-base font-semibold text-foreground">
-          Pembayaran belum tercocokkan ({data.belumDiproses.length})
+          Pembayaran belum tercocokkan ({belumDiproses.length})
         </h2>
-        {data.belumDiproses.length === 0 ? (
+        {belumDiproses.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
             Tidak ada. Semua pembayaran yang masuk sudah cocok otomatis.
           </div>
         ) : (
           <div className="space-y-3">
-            {data.belumDiproses.map((t) => (
+            {belumDiproses.map((t) => (
               <BarisBelumDiproses key={t.id} t={t} peserta={peserta} onDone={onChanged} />
             ))}
           </div>
@@ -196,7 +198,7 @@ export function PembayaranPanel({
 
       <section>
         <h2 className="mb-3 text-base font-semibold text-foreground">Pembayaran yang sudah diaktifkan (30 terbaru)</h2>
-        {data.aktif.length === 0 ? (
+        {aktif.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
             Belum ada pembayaran yang diaktifkan lewat webhook/pencocokan.
           </div>
@@ -214,7 +216,7 @@ export function PembayaranPanel({
                 </tr>
               </thead>
               <tbody>
-                {data.aktif.map((t) => (
+                {aktif.map((t) => (
                   <tr key={t.id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatTanggal(t.createdAt)}</td>
                     <td className="px-4 py-3 font-mono text-xs">{t.pesertaKode ?? "—"}</td>

@@ -92,6 +92,52 @@ interface Demografi {
   topPendidikan: { label: string; count: number }[];
 }
 
+// ─── Normalisasi respons API ──────────────────────────────────────────
+// Respons dari API admin tidak dipercaya punya semua field (database kosong,
+// respons error, versi lama): setiap field array/angka diberi nilai awal yang
+// aman supaya .filter/.map/.length di bawah tidak pernah menemui undefined.
+function normMatching(d: unknown): MatchingResult {
+  const o = (d ?? {}) as Partial<MatchingResult> & { count?: number };
+  return {
+    totalPeserta: o.totalPeserta ?? o.count ?? 0,
+    totalPasangan: o.totalPasangan ?? 0,
+    diblokir: o.diblokir ?? 0,
+    hasil: Array.isArray(o.hasil) ? o.hasil : [],
+  };
+}
+
+function normStats(d: unknown): Stats {
+  const o = (d ?? {}) as Partial<Stats>;
+  return {
+    totalPremium: o.totalPremium ?? 0,
+    totalPemasukan: o.totalPemasukan ?? 0,
+    totalBanned: o.totalBanned ?? 0,
+    totalLaporan: o.totalLaporan ?? 0,
+    daftarMulai: o.daftarMulai ?? 0,
+    daftarSelesai: o.daftarSelesai ?? 0,
+    abandoned: o.abandoned ?? 0,
+  };
+}
+
+function normDemografi(d: unknown): Demografi {
+  const o = (d ?? {}) as Partial<Demografi>;
+  return {
+    total: o.total ?? 0,
+    genderRatio: { pria: o.genderRatio?.pria ?? 0, wanita: o.genderRatio?.wanita ?? 0 },
+    usiaDist: o.usiaDist ?? {},
+    topPekerjaan: Array.isArray(o.topPekerjaan) ? o.topPekerjaan : [],
+    topPendidikan: Array.isArray(o.topPendidikan) ? o.topPendidikan : [],
+  };
+}
+
+function normPembayaran(d: unknown): PembayaranData {
+  const o = (d ?? {}) as Partial<PembayaranData>;
+  return {
+    belumDiproses: Array.isArray(o.belumDiproses) ? o.belumDiproses : [],
+    aktif: Array.isArray(o.aktif) ? o.aktif : [],
+  };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────
 function isEligible(p: PesertaData): boolean {
   if (p.banned) return false;
@@ -340,49 +386,49 @@ export default function AdminPage() {
     const res = await fetch("/api/peserta");
     if (!guard(res)) return;
     const data = await res.json();
-    setPeserta(data.peserta || []);
+    setPeserta(Array.isArray(data.peserta) ? data.peserta : []);
   }, [guard]);
 
   const fetchLaporan = useCallback(async () => {
     const res = await fetch("/api/admin/laporan");
     if (!guard(res)) return;
     const data = await res.json();
-    setLaporan(data.laporan || []);
+    setLaporan(Array.isArray(data.laporan) ? data.laporan : []);
   }, [guard]);
 
   const fetchMatching = useCallback(async () => {
     const res = await fetch("/api/matching");
     if (!guard(res)) return;
     const data = await res.json();
-    setMatching(data);
+    setMatching(normMatching(data));
   }, [guard]);
 
   const fetchStats = useCallback(async () => {
     const res = await fetch("/api/admin/stats");
     if (!guard(res)) return;
     const data = await res.json();
-    setStats(data);
+    setStats(normStats(data));
   }, [guard]);
 
   const fetchDemografi = useCallback(async () => {
     const res = await fetch("/api/admin/demografi");
     if (!guard(res)) return;
     const data = await res.json();
-    setDemografi(data);
+    setDemografi(normDemografi(data));
   }, [guard]);
 
   const fetchDeletionLogs = useCallback(async () => {
     const res = await fetch("/api/admin/deletion-logs");
     if (!guard(res)) return;
     const data = await res.json();
-    setDeletionLogs(data.logs || []);
+    setDeletionLogs(Array.isArray(data.logs) ? data.logs : []);
   }, [guard]);
 
   const fetchPembayaran = useCallback(async () => {
     const res = await fetch("/api/admin/transaksi");
     if (!guard(res)) return;
     const data = await res.json();
-    setPembayaran(data);
+    setPembayaran(normPembayaran(data));
   }, [guard]);
 
   useEffect(() => {
@@ -976,6 +1022,11 @@ export default function AdminPage() {
           {/* ── Tab: Matching ── */}
           {tab === "matching" && matching && (
             <div className="space-y-6">
+              {matching.hasil.length === 0 && (
+                <div className="rounded-xl border border-border bg-card p-12 text-center text-muted-foreground">
+                  Belum ada hasil pencocokan. Matching berjalan setelah ada minimal 2 peserta.
+                </div>
+              )}
               {matching.hasil.map((h) => (
                 <div key={h.kode} className="rounded-xl border border-border bg-card p-6">
                   <div className="mb-4 flex items-center gap-3">
