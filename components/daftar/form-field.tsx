@@ -9,7 +9,9 @@ interface FormFieldProps {
   onChange: (name: string, value: string) => void;
   type?: "text" | "email" | "number" | "select" | "textarea";
   placeholder?: string;
-  options?: readonly string[];
+  /** String biasa (nilai = teks), atau {value, label} bila teks yang tampil perlu
+   *  berbeda dari nilai yang disimpan (mis. label dipersingkat). */
+  options?: readonly (string | { value: string; label: string })[];
   required?: boolean;
   children?: ReactNode;
 }
@@ -42,11 +44,15 @@ export function FormField({
           required={required}
         >
           <option value="">{placeholder || "Pilih..."}</option>
-          {options?.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
+          {options?.map((opt) => {
+            const value = typeof opt === "string" ? opt : opt.value;
+            const text = typeof opt === "string" ? opt : opt.label;
+            return (
+              <option key={value} value={value}>
+                {text}
+              </option>
+            );
+          })}
         </select>
       ) : type === "textarea" ? (
         <textarea

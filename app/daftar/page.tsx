@@ -96,7 +96,13 @@ const ANAK_OPT = ["Ingin 1–2 anak", "Ingin 3+ anak", "Belum memutuskan"] as co
 const ORTU = ["Berdua dengan pasangan", "Bersama orang tua"] as const;
 const BAHASA_KASIH = ["Quality Time", "Acts of Service", "Physical Touch", "Words of Affirmation", "Receiving Gifts"] as const;
 const KONFLIK = ["Bicara segera", "Butuh waktu dulu", "Menghindari konflik"] as const;
-const BOLEH_HUBUNG = ["Ya, silakan hubungkan", "Saya ingin pertimbangkan dulu", "Tidak, hanya ingin tahu hasil"] as const;
+// Nilai yang DISIMPAN tetap teks aslinya (data peserta lama konsisten); hanya label tampilan
+// "Saya ingin pertimbangkan dulu" dipersingkat supaya muat di kolom HP.
+const BOLEH_HUBUNG = [
+  { value: "Ya, silakan hubungkan", label: "Ya, silakan hubungkan" },
+  { value: "Saya ingin pertimbangkan dulu", label: "Pertimbangkan dulu" },
+  { value: "Tidak, hanya ingin tahu hasil", label: "Tidak, hanya ingin tahu hasil" },
+] as const;
 const KLG = ["1", "2", "3", "4", "5", ">5"] as const;
 const INTRO = ["1", "2", "3", "4", "5"] as const;
 const BERAT_BADAN = ["Kurus", "Sedang", "Berisi"] as const;
@@ -813,7 +819,7 @@ function DaftarForm() {
                   </div>
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-6 md:grid-cols-2">
                   <FormField label="Agama" name="agama" value={data.agama} onChange={set} type="select" options={AGAMA} required />
                   <FormField label="Suku" name="suku" value={data.suku} onChange={set} type="select" options={SUKU} required />
                 </div>
@@ -906,7 +912,7 @@ function DaftarForm() {
               </p>
               <div className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <FormField label="Pekerjaan" name="pekerjaan" value={data.pekerjaan} onChange={set} placeholder="cth: Dokter, Software Engineer" />
+                  <FormField label="Pekerjaan" name="pekerjaan" value={data.pekerjaan} onChange={set} placeholder="cth: Dokter, Guru" />
                   <FormField label="Jabatan" name="jabatan" value={data.jabatan} onChange={set} placeholder="cth: Senior Manager" />
                 </div>
 
