@@ -182,7 +182,7 @@ export default function ChatClient({ id, kode }: { id: string; kode: string }) {
               onChange={(e) => setAlasanLaporan(e.target.value)}
               placeholder="Contoh: Pengguna mengirim konten yang tidak pantas"
               rows={4}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
             />
             <div className="mt-4 flex gap-3">
               <button
@@ -306,7 +306,7 @@ export default function ChatClient({ id, kode }: { id: string; kode: string }) {
             placeholder="Ketik pesan..."
             rows={1}
             style={{ resize: "none" }}
-            className="flex-1 min-h-[40px] max-h-[120px] rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="flex-1 min-h-[40px] max-h-[120px] rounded-xl border border-border bg-background px-4 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <button
             onClick={kirimPesan}

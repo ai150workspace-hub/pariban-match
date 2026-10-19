@@ -99,7 +99,7 @@ export default function ResetForm() {
                   minLength={8}
                   autoFocus
                   placeholder="Minimal 8 karakter"
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <div>
@@ -113,7 +113,7 @@ export default function ResetForm() {
                   onChange={(e) => setKonfirmasi(e.target.value)}
                   autoComplete="new-password"
                   required
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <label className="flex items-center gap-2 text-sm text-muted-foreground">

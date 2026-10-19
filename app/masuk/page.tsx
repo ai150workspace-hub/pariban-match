@@ -177,7 +177,7 @@ function MasukForm() {
                 placeholder="nama@email.com"
                 required
                 autoComplete="email"
-                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
 
@@ -201,7 +201,7 @@ function MasukForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password"
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-11 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <button
                   type="button"

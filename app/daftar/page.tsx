@@ -628,7 +628,7 @@ function DaftarForm() {
                         type="email"
                         value={data.email}
                         readOnly
-                        className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-sm text-muted-foreground cursor-not-allowed"
+                        className="w-full rounded-xl border border-border bg-secondary/50 px-4 py-3 text-base text-muted-foreground cursor-not-allowed"
                       />
                     </div>
                     <FormField
@@ -716,7 +716,7 @@ function DaftarForm() {
                       onChange={(e) => set("password", e.target.value)}
                       placeholder="Masukkan password akun Anda"
                       autoComplete="new-password"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 pr-11 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                     <button
                       type="button"
@@ -744,7 +744,7 @@ function DaftarForm() {
                       onChange={(e) => set("confirmPassword", e.target.value)}
                       placeholder="Ulangi password Anda"
                       autoComplete="new-password"
-                      className={`w-full rounded-xl border px-4 py-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background ${
+                      className={`w-full rounded-xl border px-4 py-3 pr-11 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background ${
                         data.confirmPassword && data.password !== data.confirmPassword
                           ? "border-red-400 bg-red-50/50 dark:bg-red-900/10"
                           : "border-border"
@@ -784,7 +784,7 @@ function DaftarForm() {
                         setProvinsi(e.target.value);
                         set("kota", ""); // reset kota saat provinsi berubah
                       }}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     >
                       <option value="">— Pilih Provinsi —</option>
                       {PROVINSI_LIST.map((p) => (
@@ -800,7 +800,7 @@ function DaftarForm() {
                       value={data.kota}
                       onChange={(e) => set("kota", e.target.value)}
                       disabled={!provinsi}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">— Pilih Kota/Kabupaten —</option>
                       {kotaList.map((k) => (
