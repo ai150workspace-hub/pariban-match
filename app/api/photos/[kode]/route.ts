@@ -7,7 +7,9 @@ import { canActAs, forbidden, getKodeSesi, isAdminRequest } from "@/lib/request-
 
 const PHOTOS_DIR = join(process.cwd(), ".data", "photos");
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+// 4MB: di bawah batas badan permintaan fungsi Vercel (4,5MB). Klien memperkecil foto
+// lebih dulu (lib/foto-client.ts), jadi foto normal jauh di bawah ini.
+const MAX_SIZE = 4 * 1024 * 1024;
 const USE_SUPABASE = !!process.env.NEXT_PUBLIC_SUPABASE_URL && !!process.env.SUPABASE_SERVICE_KEY;
 const BUCKET = "pariban-photos";
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 jam
@@ -97,7 +99,10 @@ export async function POST(
   if (!ALLOWED_TYPES.includes(mimeType))
     return NextResponse.json({ error: "Format harus JPG, PNG, atau WebP" }, { status: 400 });
   if (file.size > MAX_SIZE)
-    return NextResponse.json({ error: "Ukuran maksimal 5MB" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ukuran foto maksimal 4MB. Perkecil foto lalu coba lagi." },
+      { status: 413 },
+    );
 
   const index = formData.get("index")?.toString() ?? "1";
   const isProfile = formData.get("isProfile") === "true";

@@ -6,6 +6,12 @@ import Link from "next/link";
 import Script from "next/script";
 import { StatusAdatBadge } from "@/components/ui/status-adat-badge";
 import { PAKET_PREMIUM, TRIAL_DURASI_HARI } from "@/lib/pricing";
+import {
+  catatGalatUpload,
+  jelaskanExceptionUpload,
+  jelaskanResponUpload,
+  kompresFoto,
+} from "@/lib/foto-client";
 
 declare global {
   interface Window {
@@ -248,8 +254,18 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
     setShowCamera(false);
   }
 
-  async function uploadPhoto(blob: Blob, isLive: boolean) {
+  async function uploadPhoto(asli: Blob, isLive: boolean) {
     setAddError("");
+    // Perkecil dulu (foto galeri ponsel bisa > batas badan permintaan server 4MB).
+    let blob: Blob;
+    try {
+      blob = await kompresFoto(asli);
+    } catch (err) {
+      const galat = jelaskanExceptionUpload(err);
+      catatGalatUpload({ tahap: "kompres", ukuran: asli.size }, galat, err);
+      setAddError(galat.pesan);
+      return;
+    }
     setFaceDetecting(true);
     const hasFace = await detectFaceInBlob(blob);
     setFaceDetecting(false);
@@ -273,11 +289,14 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
         setShowAdd(false);
         stopCamera();
       } else {
-        const r = await res.json().catch(() => ({}));
-        setAddError(r.error || "Gagal upload foto");
+        const galat = await jelaskanResponUpload(res);
+        catatGalatUpload({ tahap: "kirim", ukuran: blob.size, live: isLive }, galat);
+        setAddError(`${galat.pesan} (${galat.rincian.slice(0, 80)})`);
       }
-    } catch {
-      setAddError("Gagal upload foto. Coba lagi.");
+    } catch (err) {
+      const galat = jelaskanExceptionUpload(err);
+      catatGalatUpload({ tahap: "kirim", ukuran: blob.size, live: isLive }, galat, err);
+      setAddError(`${galat.pesan} (${galat.rincian.slice(0, 80)})`);
     } finally {
       setAdding(false);
     }
@@ -287,7 +306,8 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
     try {
       const imgRes = await fetch(`/api/photos/${kode}?index=${idx}&r=${refreshKey}`);
       if (!imgRes.ok) return;
-      const blob = await imgRes.blob();
+      // Foto lama bisa > 4MB (batas sebelumnya 5MB): perkecil dulu.
+      const blob = await kompresFoto(await imgRes.blob());
       const fd = new FormData();
       fd.append("foto", blob, "profile.jpg");
       fd.append("index", String(idx));
@@ -315,7 +335,6 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setAddError("Ukuran maksimal 5MB"); return; }
     uploadPhoto(file, false);
   }
 
@@ -449,18 +468,38 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   e.target.value = "";
-                  if (!file || file.size > 5 * 1024 * 1024) { setAddError("Ukuran maksimal 5MB"); return; }
+                  if (!file) return;
+                  let kecil: Blob;
+                  try {
+                    kecil = await kompresFoto(file);
+                  } catch (err) {
+                    const galat = jelaskanExceptionUpload(err);
+                    catatGalatUpload({ tahap: "kompres-ganti", ukuran: file.size }, galat, err);
+                    setAddError(galat.pesan);
+                    return;
+                  }
                   const isProf = selectedIdx === 0;
                   const fd = new FormData();
-                  fd.append("foto", file, `foto_replace.jpg`);
+                  fd.append("foto", kecil, `foto_replace.jpg`);
                   fd.append("index", String(selectedIdx === 0 ? 1 : selectedIdx));
                   fd.append("isProfile", isProf ? "true" : "false");
                   fd.append("isLive", "false");
                   setAdding(true);
-                  const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
-                  setAdding(false);
-                  if (res.ok) { setRefreshKey((k) => k + 1); setSelectedIdx(null); }
-                  else { const r = await res.json().catch(() => ({})); setAddError(r.error || "Gagal mengganti foto"); }
+                  try {
+                    const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
+                    if (res.ok) { setRefreshKey((k) => k + 1); setSelectedIdx(null); }
+                    else {
+                      const galat = await jelaskanResponUpload(res);
+                      catatGalatUpload({ tahap: "kirim-ganti", ukuran: kecil.size }, galat);
+                      setAddError(`${galat.pesan} (${galat.rincian.slice(0, 80)})`);
+                    }
+                  } catch (err) {
+                    const galat = jelaskanExceptionUpload(err);
+                    catatGalatUpload({ tahap: "kirim-ganti", ukuran: kecil.size }, galat, err);
+                    setAddError(`${galat.pesan} (${galat.rincian.slice(0, 80)})`);
+                  } finally {
+                    setAdding(false);
+                  }
                 }}
               />
             </label>
@@ -510,7 +549,7 @@ function FotoGaleri({ kode, fotoUrl, fotoLiveVerified }: {
               <label className={`flex-1 flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-4 hover:border-primary/50 transition-colors ${faceDetecting || adding ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
                 <span className="text-2xl">🖼️</span>
                 <span className="text-xs font-medium text-foreground">Dari Galeri</span>
-                <span className="text-[10px] text-muted-foreground">JPG/PNG/WebP · 5MB</span>
+                <span className="text-[10px] text-muted-foreground">JPG/PNG/WebP · 4MB</span>
                 <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileChange} className="hidden" disabled={faceDetecting || adding} />
               </label>
             </div>

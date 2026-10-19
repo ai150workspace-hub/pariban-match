@@ -10,6 +10,16 @@ import { FormField } from "@/components/daftar/form-field";
 import { MargaSelect } from "@/components/daftar/marga-select";
 import { KOTA_PER_PROVINSI, PROVINSI_LIST } from "@/lib/wilayah";
 import { readOauthPrefill, clearOauthPrefill } from "@/lib/oauth-prefill";
+import {
+  FOTO_BATAS_BYTE,
+  PESAN_FOTO_TERLALU_BESAR,
+  blobKeDataUrl,
+  catatGalatUpload,
+  jelaskanExceptionUpload,
+  jelaskanResponUpload,
+  kompresFoto,
+  FotoError,
+} from "@/lib/foto-client";
 
 const INITIAL = {
   nama: "",
@@ -187,6 +197,7 @@ function DaftarForm() {
   const [profileId, setProfileId] = useState<string>("");
   const [showCamera, setShowCamera] = useState(false);
   const [fotoError, setFotoError] = useState("");
+  const [fotoErrorRincian, setFotoErrorRincian] = useState("");
   const [fotoUploadLoading, setFotoUploadLoading] = useState(false);
   const [fotosAllDone, setFotosAllDone] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -261,35 +272,40 @@ function DaftarForm() {
     }
   }
 
-  function addFotoFromFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function addFotoFromFile(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (fotos.length + files.length > 5) {
       setFotoError("Maksimal 5 foto");
+      setFotoErrorRincian("");
       return;
     }
     setFotoError("");
-    files.forEach((file) => {
+    setFotoErrorRincian("");
+    for (const file of files) {
       if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
         setFotoError("Format harus JPG, PNG, atau WebP");
-        return;
+        continue;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setFotoError("Ukuran maksimal 5MB per foto");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
+      try {
+        // Foto galeri ponsel sering 3–8MB: diperkecil di perangkat dulu supaya
+        // tidak melewati batas badan permintaan server (4MB).
+        const kecil = await kompresFoto(file);
+        const preview = await blobKeDataUrl(kecil);
         const id = `g_${Date.now()}_${Math.random()}`;
         setFotos((prev) => {
-          const entry: FotoEntry = { id, preview: ev.target?.result as string, isLive: false, uploaded: false, blob: file };
+          const entry: FotoEntry = { id, preview, isLive: false, uploaded: false, blob: kecil };
           const next = [...prev, entry];
           if (!profileId && next.length === 1) setProfileId(id);
           return next;
         });
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        const galat = jelaskanExceptionUpload(err);
+        catatGalatUpload({ tahap: "kompres-galeri", nama: file.name, tipe: file.type, ukuran: file.size }, galat, err);
+        setFotoError(galat.pesan);
+        setFotoErrorRincian(err instanceof FotoError ? "" : galat.rincian);
+      }
+    }
   }
 
   async function startCamera() {
@@ -317,17 +333,28 @@ function DaftarForm() {
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
     canvas.getContext("2d")?.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const preview = canvas.toDataURL("image/jpeg");
-      const id = `live_${Date.now()}`;
-      setFotos((prev) => {
-        const entry: FotoEntry = { id, preview, isLive: true, uploaded: false, blob };
-        const next = [...prev, entry];
-        if (!profileId && next.length === 1) setProfileId(id);
-        return next;
-      });
-    }, "image/jpeg", 0.92);
+    canvas.toBlob(async (mentah) => {
+      if (!mentah) return;
+      try {
+        // Pipeline kompresi SAMA dengan foto galeri. Penanda foto live ada di
+        // entry.isLive (dikirim sebagai field isLive), bukan di berkas, jadi
+        // tidak hilang karena kompresi.
+        const kecil = await kompresFoto(mentah);
+        const preview = await blobKeDataUrl(kecil);
+        const id = `live_${Date.now()}`;
+        setFotos((prev) => {
+          const entry: FotoEntry = { id, preview, isLive: true, uploaded: false, blob: kecil };
+          const next = [...prev, entry];
+          if (!profileId && next.length === 1) setProfileId(id);
+          return next;
+        });
+      } catch (err) {
+        const galat = jelaskanExceptionUpload(err);
+        catatGalatUpload({ tahap: "kompres-kamera", ukuran: mentah.size }, galat, err);
+        setFotoError(galat.pesan);
+        setFotoErrorRincian(err instanceof FotoError ? "" : galat.rincian);
+      }
+    }, "image/jpeg", 0.95);
     stopCamera();
   }
 
@@ -344,28 +371,40 @@ function DaftarForm() {
     if (!kode || fotos.length < 3) return;
     setFotoUploadLoading(true);
     setFotoError("");
+    setFotoErrorRincian("");
+    let index = 1;
+    let blobUkuran = 0;
     try {
-      let index = 1;
       for (const entry of fotos) {
         const isProfile = entry.id === profileId;
         const fd = new FormData();
         const blob = entry.blob ?? await (await fetch(entry.preview)).blob();
+        blobUkuran = blob.size;
+        if (blob.size > FOTO_BATAS_BYTE) {
+          setFotoError(`Foto ${index} dari ${fotos.length}: ${PESAN_FOTO_TERLALU_BESAR}`);
+          return;
+        }
         fd.append("foto", blob, `foto_${index}.jpg`);
         fd.append("index", String(index));
         fd.append("isProfile", isProfile ? "true" : "false");
         fd.append("isLive", entry.isLive ? "true" : "false");
         const res = await fetch(`/api/photos/${kode}`, { method: "POST", body: fd });
         if (!res.ok) {
-          let errMsg = "Gagal upload foto";
-          try { const r = await res.json(); errMsg = r.error || errMsg; } catch {}
-          setFotoError(errMsg);
+          const galat = await jelaskanResponUpload(res);
+          catatGalatUpload({ tahap: "kirim", foto: index, dari: fotos.length, ukuran: blob.size, tipe: blob.type, live: entry.isLive }, galat);
+          setFotoError(`Foto ${index} dari ${fotos.length}: ${galat.pesan}`);
+          setFotoErrorRincian(galat.rincian);
           return;
         }
         index++;
       }
       setFotosAllDone(true);
-    } catch {
-      setFotoError("Gagal upload foto. Periksa koneksi Anda.");
+    } catch (err) {
+      // Exception SEBELUM ada balasan HTTP (jaringan terputus, diblokir, file tidak terbaca, dll).
+      const galat = jelaskanExceptionUpload(err);
+      catatGalatUpload({ tahap: "kirim", foto: index, dari: fotos.length, ukuran: blobUkuran }, galat, err);
+      setFotoError(`Foto ${index} dari ${fotos.length}: ${galat.pesan}`);
+      setFotoErrorRincian(galat.rincian);
     } finally {
       setFotoUploadLoading(false);
     }
@@ -505,7 +544,7 @@ function DaftarForm() {
                   <label className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border py-4 text-sm font-medium text-foreground hover:border-primary/50 hover:bg-secondary/30 transition-colors cursor-pointer">
                     <span className="text-xl">🖼️</span>
                     <span>Dari Galeri</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">JPG, PNG, WebP · max 5MB</span>
+                    <span className="text-[10px] text-muted-foreground font-normal">JPG, PNG, WebP · max 4MB</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -522,7 +561,14 @@ function DaftarForm() {
                 <p>🖼️ <strong>Dari Galeri</strong> — upload foto dari ponsel/komputer, tanpa badge verifikasi.</p>
               </div>
 
-              {fotoError && <p className="text-sm text-red-600">{fotoError}</p>}
+              {fotoError && (
+                <div className="space-y-1">
+                  <p className="text-sm text-red-600">{fotoError}</p>
+                  {fotoErrorRincian && (
+                    <p className="text-[11px] text-muted-foreground break-words">Rincian teknis: {fotoErrorRincian}</p>
+                  )}
+                </div>
+              )}
 
               <button
                 type="button"

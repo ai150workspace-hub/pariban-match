@@ -233,6 +233,9 @@ export async function addPeserta(p: Peserta): Promise<Peserta> {
     const kode = await sbNextKode();
     const saved: Peserta = { ...p, kode };
     await sbAdd(saved);
+    // Kode yang sama mungkin pernah dicek (akun lama yang sudah dihapus, cookie
+    // masih sah) dan tersimpan di cache sebagai "tidak_ada" — buang.
+    lupakanStatus(kode);
     return saved;
   }
   const list = await fileLoad();
@@ -240,6 +243,7 @@ export async function addPeserta(p: Peserta): Promise<Peserta> {
   const peserta: Peserta = { ...p, kode };
   list.push(peserta);
   await fileSave(list);
+  lupakanStatus(kode);
   return peserta;
 }
 
