@@ -56,7 +56,7 @@ export function MargaSelect({
             setOpen(true);
             setSearch("");
           }}
-          placeholder={value || "Ketik untuk mencari marga..."}
+          placeholder={value || "Cari marga..."}
           className="w-full rounded-lg border border-border bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
           required={required}
         />
