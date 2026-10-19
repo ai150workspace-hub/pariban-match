@@ -85,10 +85,27 @@ const SUKU = [
 const CARI_AGAMA = ["Harus sama dengan saya", "Terbuka"] as const;
 const IBADAH = ["Setiap minggu", "Beberapa kali sebulan", "Sesekali", "Jarang"] as const;
 const ROKOK = ["Tidak merokok", "Kadang", "Ya, rutin"] as const;
-const ALKOHOL = ["Tidak sama sekali", "Sesekali di acara keluarga", "Ya, sosial"] as const;
+// Label tampilan dipersingkat supaya muat di kolom HP; NILAI yang disimpan tetap teks aslinya.
+const ALKOHOL = [
+  { value: "Tidak sama sekali", label: "Tidak sama sekali" },
+  { value: "Sesekali di acara keluarga", label: "Sesekali, acara keluarga" },
+  { value: "Ya, sosial", label: "Ya, sosial" },
+] as const;
 const ANAK_KE = ["Anak sulung", "Anak tengah", "Anak bungsu", "Anak tunggal"] as const;
 const PENDIDIKAN = ["SMA/SMK", "D3", "S1", "S2", "S3"] as const;
-const KERJA = ["Karyawan swasta", "Wiraswasta/Pengusaha/Entrepreneur", "Profesional/Freelance", "PNS/TNI/Polri", "Sedang mencari"] as const;
+const KERJA = [
+  { value: "Karyawan swasta", label: "Karyawan swasta" },
+  { value: "Wiraswasta/Pengusaha/Entrepreneur", label: "Wiraswasta/Pengusaha" },
+  { value: "Profesional/Freelance", label: "Profesional/Freelance" },
+  { value: "PNS/TNI/Polri", label: "PNS/TNI/Polri" },
+  { value: "Sedang mencari", label: "Sedang mencari" },
+] as const;
+// Nama kabupaten yang terlalu panjang untuk dropdown di HP: hanya tampilan; nilai tersimpan = nama lengkap.
+const KOTA_LABEL: Record<string, string> = {
+  "Bolaang Mongondow Selatan": "Bolmong Selatan",
+  "Bolaang Mongondow Timur": "Bolmong Timur",
+  "Bolaang Mongondow Utara": "Bolmong Utara",
+};
 const SEDIA = ["Ya", "Bisa dipertimbangkan", "Tidak"] as const;
 const TIMELINE = ["Dalam 1 tahun", "1–2 tahun", "2–3 tahun", "Belum tahu"] as const;
 const TABUNGAN = ["Sudah ada", "Sedang menabung", "Belum mulai"] as const;
@@ -790,7 +807,7 @@ function DaftarForm() {
                         setProvinsi(e.target.value);
                         set("kota", ""); // reset kota saat provinsi berubah
                       }}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full rounded-xl border border-border bg-background px-4 max-[380px]:px-3 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     >
                       <option value="">— Pilih Provinsi —</option>
                       {PROVINSI_LIST.map((p) => (
@@ -806,11 +823,11 @@ function DaftarForm() {
                       value={data.kota}
                       onChange={(e) => set("kota", e.target.value)}
                       disabled={!provinsi}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full rounded-xl border border-border bg-background px-4 max-[380px]:px-3 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="">— Pilih Kota/Kabupaten —</option>
                       {kotaList.map((k) => (
-                        <option key={k} value={k}>{k}</option>
+                        <option key={k} value={k}>{KOTA_LABEL[k] ?? k}</option>
                       ))}
                     </select>
                     {!provinsi && (

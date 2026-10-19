@@ -40,7 +40,9 @@ export function FormField({
           name={name}
           value={value}
           onChange={(e) => onChange(name, e.target.value)}
-          className={baseClass}
+          // Padding kiri-kanan dilonggarkan di layar <=380px supaya opsi panjang
+          // (mis. "Batak Angkola/Mandailing") muat di dropdown.
+          className={`${baseClass} max-[380px]:px-3`}
           required={required}
         >
           <option value="">{placeholder || "Pilih..."}</option>
