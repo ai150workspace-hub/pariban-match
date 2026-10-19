@@ -459,7 +459,7 @@ function DaftarForm() {
                       style={{ width: `${Math.min(100, (fotos.length / MIN_FOTO) * 100)}%` }}
                     />
                   </div>
-                  <span className={`text-xs font-medium ${fotos.length >= MIN_FOTO ? "text-adat-aman" : "text-muted-foreground"}`}>
+                  <span className={`text-sm font-medium ${fotos.length >= MIN_FOTO ? "text-adat-aman" : "text-muted-foreground"}`}>
                     {fotos.length}/{MIN_FOTO} foto
                   </span>
                 </div>
@@ -482,7 +482,7 @@ function DaftarForm() {
                       >✕</button>
                     </div>
                   </div>
-                  <p className="text-xs text-center text-muted-foreground">Foto live-camera akan mendapat badge "Terverifikasi Live"</p>
+                  <p className="text-sm text-center text-muted-foreground">Foto live-camera akan mendapat badge "Terverifikasi Live"</p>
                 </div>
               )}
 
@@ -498,12 +498,12 @@ function DaftarForm() {
                         }`}
                       />
                       {f.isLive && (
-                        <span className="absolute top-1.5 left-1.5 rounded-full bg-adat-aman text-white text-[9px] font-bold px-1.5 py-0.5 leading-tight shadow">
+                        <span className="absolute top-1.5 left-1.5 rounded-full bg-adat-aman text-white text-[11px] font-bold px-1.5 py-0.5 leading-tight shadow">
                           ✓ LIVE
                         </span>
                       )}
                       {f.id === profileId && (
-                        <span className="absolute bottom-1.5 inset-x-1.5 rounded-full bg-primary text-primary-foreground text-[9px] font-bold text-center py-0.5 shadow">
+                        <span className="absolute bottom-1.5 inset-x-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold text-center py-0.5 shadow">
                           PROFIL UTAMA
                         </span>
                       )}
@@ -512,7 +512,7 @@ function DaftarForm() {
                           <button
                             type="button"
                             onClick={() => setProfileId(f.id)}
-                            className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-foreground shadow"
+                            className="rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold text-foreground shadow"
                           >
                             Jadikan Profil
                           </button>
@@ -520,7 +520,7 @@ function DaftarForm() {
                         <button
                           type="button"
                           onClick={() => removeFoto(f.id)}
-                          className="rounded-full bg-red-500/90 px-2 py-0.5 text-[10px] font-semibold text-white shadow"
+                          className="rounded-full bg-red-500/90 px-2 py-0.5 text-xs font-semibold text-white shadow"
                         >
                           Hapus
                         </button>
@@ -539,12 +539,12 @@ function DaftarForm() {
                   >
                     <span className="text-xl">📸</span>
                     <span>Ambil Foto Live</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">Dapat badge Terverifikasi</span>
+                    <span className="text-xs text-muted-foreground font-normal">Dapat badge Terverifikasi</span>
                   </button>
                   <label className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border py-4 text-sm font-medium text-foreground hover:border-primary/50 hover:bg-secondary/30 transition-colors cursor-pointer">
                     <span className="text-xl">🖼️</span>
                     <span>Dari Galeri</span>
-                    <span className="text-[10px] text-muted-foreground font-normal">JPG, PNG, WebP · max 4MB</span>
+                    <span className="text-xs text-muted-foreground font-normal">JPG, PNG, WebP · max 4MB</span>
                     <input
                       type="file"
                       accept="image/jpeg,image/jpg,image/png,image/webp"
@@ -556,7 +556,7 @@ function DaftarForm() {
                 </div>
               )}
 
-              <div className="rounded-lg bg-secondary/50 px-4 py-3 text-xs text-muted-foreground space-y-1">
+              <div className="rounded-lg bg-secondary/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
                 <p>📸 <strong>Foto Live</strong> — diambil langsung dari kamera, mendapat badge hijau "Terverifikasi". Kandidat lebih yakin ini profil nyata.</p>
                 <p>🖼️ <strong>Dari Galeri</strong> — upload foto dari ponsel/komputer, tanpa badge verifikasi.</p>
               </div>
@@ -565,7 +565,7 @@ function DaftarForm() {
                 <div className="space-y-1">
                   <p className="text-sm text-red-600">{fotoError}</p>
                   {fotoErrorRincian && (
-                    <p className="text-[11px] text-muted-foreground break-words">Rincian teknis: {fotoErrorRincian}</p>
+                    <p className="text-xs text-muted-foreground break-words">Rincian teknis: {fotoErrorRincian}</p>
                   )}
                 </div>
               )}
@@ -730,7 +730,7 @@ function DaftarForm() {
                       )}
                     </button>
                     {data.password && data.password.length < 8 && (
-                      <p className="mt-1 text-xs text-red-600">Password minimal 8 karakter</p>
+                      <p className="mt-1 text-sm text-red-600">Password minimal 8 karakter</p>
                     )}
                   </div>
 
@@ -762,7 +762,7 @@ function DaftarForm() {
                       )}
                     </button>
                     {data.confirmPassword && data.password !== data.confirmPassword && (
-                      <p className="mt-1 text-xs text-red-600">Password tidak cocok</p>
+                      <p className="mt-1 text-sm text-red-600">Password tidak cocok</p>
                     )}
                   </div>
                 </div>
@@ -808,7 +808,7 @@ function DaftarForm() {
                       ))}
                     </select>
                     {!provinsi && (
-                      <p className="text-xs text-muted-foreground">Pilih provinsi terlebih dahulu</p>
+                      <p className="text-sm text-muted-foreground">Pilih provinsi terlebih dahulu</p>
                     )}
                   </div>
                 </div>
@@ -901,7 +901,7 @@ function DaftarForm() {
             <>
               <h2 className="text-2xl font-bold leading-tight text-foreground">Bio Profil</h2>
               <p className="mt-1 text-sm text-muted-foreground mb-2">Semua isian di bawah bersifat opsional</p>
-              <p className="mb-8 text-xs text-muted-foreground bg-secondary/50 rounded-lg px-4 py-2.5">
+              <p className="mb-8 text-sm text-muted-foreground bg-secondary/50 rounded-lg px-4 py-2.5">
                 Semakin lengkap profil Anda, semakin percaya kandidat lain. Anda bisa melewati langkah ini.
               </p>
               <div className="space-y-6">
@@ -957,7 +957,7 @@ function DaftarForm() {
                     ))}
                   </div>
                   {minat.length > 0 && (
-                    <p className="text-xs text-muted-foreground">{minat.length}/5 dipilih</p>
+                    <p className="text-sm text-muted-foreground">{minat.length}/5 dipilih</p>
                   )}
                 </div>
 

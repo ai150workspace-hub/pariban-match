@@ -100,7 +100,7 @@ export function MargaSelect({
               ))
             )}
             {filtered.length > 50 && (
-              <div className="px-4 py-2 text-xs text-muted-foreground border-t border-border">
+              <div className="px-4 py-2 text-sm text-muted-foreground border-t border-border">
                 Ketik lebih spesifik — {filtered.length - 50} marga lagi
               </div>
             )}
