@@ -34,14 +34,14 @@ export function Footer() {
           <br />
           Dibuat dengan menghormati adat dan budaya Batak.
         </p>
-        <nav className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-6 text-xs text-white/70">
+        <nav className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-6 text-sm text-white/70">
           {FOOTER_LINKS.map((l) => (
             <Link key={l.href} href={l.href} className="hover:text-white transition-colors">
               {l.label}
             </Link>
           ))}
         </nav>
-        <p className="mt-4 text-xs text-white/70">
+        <p className="mt-4 text-sm text-white/70">
           <a href="mailto:financepariban@gmail.com" className="hover:text-white transition-colors">
             financepariban@gmail.com
           </a>

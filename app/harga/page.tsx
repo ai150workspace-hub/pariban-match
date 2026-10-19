@@ -43,7 +43,7 @@ export default function HargaPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold text-foreground">{p.nama}</p>
                   {p.badge && (
-                    <span className="rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold text-white">
+                    <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-bold text-white">
                       {p.badge}
                     </span>
                   )}
@@ -53,7 +53,7 @@ export default function HargaPage() {
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">{p.durasiHari} hari</p>
                 {p.perBulan && (
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     setara Rp {p.perBulan.toLocaleString("id-ID")}/bulan
                   </p>
                 )}
