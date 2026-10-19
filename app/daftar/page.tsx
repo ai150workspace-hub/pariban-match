@@ -101,7 +101,7 @@ const KONFLIK = ["Bicara segera", "Butuh waktu dulu", "Menghindari konflik"] as 
 const BOLEH_HUBUNG = [
   { value: "Ya, silakan hubungkan", label: "Ya, silakan hubungkan" },
   { value: "Saya ingin pertimbangkan dulu", label: "Pertimbangkan dulu" },
-  { value: "Tidak, hanya ingin tahu hasil", label: "Tidak, hanya ingin tahu hasil" },
+  { value: "Tidak, hanya ingin tahu hasil", label: "Tidak, lihat hasil saja" },
 ] as const;
 const KLG = ["1", "2", "3", "4", "5", ">5"] as const;
 const INTRO = ["1", "2", "3", "4", "5"] as const;
